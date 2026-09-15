@@ -1,52 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soybean Genomics Atlas</title>
 
-    <title>Soybean Genomics Atlas</title>
+<style>
+* {
+    box-sizing: border-box;
+}
 
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: white;
-            color: black;
-        }
+html, body {
+    margin: 0;
+    padding: 0;
+}
 
-        .header {
-            background: black;
-            color: white;
-            padding: 25px 40px;
-        }
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #ffffff;
+    color: #000000;
+}
 
-        .title {
-            font-size: 32px;
-            font-weight: bold;
-            margin: 0;
-        }
+/* ================= HEADER ================= */
 
-        .university {
-            font-size: 17px;
-            margin-top: 6px;
-        }
+.site-header {
+    height: 165px;
+    width: 100%;
+    background: #000000;
+    color: #ffffff;
 
-        .content {
-            padding: 40px;
-        }
-    </style>
+    display: flex;
+    align-items: center;
+
+    padding: 15px 30px;
+}
+
+/* Soybean illustration */
+
+.soybean-area {
+    width: 285px;
+    height: 135px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.soybean-svg {
+    width: 250px;
+    height: 125px;
+}
+
+/* Divider */
+
+.header-divider {
+    width: 1px;
+    height: 110px;
+    background: #bdbdbd;
+    margin: 0 30px;
+}
+
+/* Title */
+
+.header-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.title {
+    margin: 0;
+    font-size: 38px;
+    line-height: 1.15;
+    font-weight: 700;
+}
+
+.university {
+    margin-top: 8px;
+    font-size: 21px;
+    font-weight: 500;
+}
+
+/* ================= MAIN ================= */
+
+.main-content {
+    min-height: calc(100vh - 165px);
+    padding: 38px 30px;
+}
+
+.placeholder {
+    margin: 0;
+    font-size: 16px;
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 700px) {
+
+    .site-header {
+        height: 120px;
+        padding: 10px 15px;
+    }
+
+    .soybean-area {
+        width: 150px;
+        height: 100px;
+    }
+
+    .soybean-svg {
+        width: 140px;
+        height: 90px;
+    }
+
+    .header-divider {
+        height: 80px;
+        margin: 0 15px;
+    }
+
+    .title {
+        font-size: 24px;
+    }
+
+    .university {
+        font-size: 15px;
+    }
+
+    .main-content {
+        padding: 25px 15px;
+    }
+}
+</style>
 </head>
 
 <body>
 
-    <header class="header">
+<header class="site-header">
+
+    <!-- SOYBEAN PLANT -->
+    <div class="soybean-area">
+
+        <svg class="soybean-svg"
+             viewBox="0 0 300 150"
+             xmlns="http://www.w3.org/2000/svg">
+
+            <!-- stem -->
+            <path d="M135 140
+                     C130 115 130 90 135 65
+                     C140 45 150 30 165 15"
+                  fill="none"
+                  stroke="#6aaa32"
+                  stroke-width="7"
+                  stroke-linecap="round"/>
+
+            <!-- left branch -->
+            <path d="M136 82
+                     C115 70 92 55 70 35"
+                  fill="none"
+                  stroke="#6aaa32"
+                  stroke-width="5"
+                  stroke-linecap="round"/>
+
+            <!-- right branch -->
+            <path d="M138 65
+                     C165 55 185 42 205 20"
+                  fill="none"
+                  stroke="#6aaa32"
+                  stroke-width="5"
+                  stroke-linecap="round"/>
+
+            <!-- left leaf -->
+            <ellipse cx="73" cy="32"
+                     rx="38" ry="18"
+                     transform="rotate(25 73 32)"
+                     fill="#79b83f"/>
+
+            <!-- left lower leaf -->
+            <ellipse cx="102" cy="65"
+                     rx="35" ry="17"
+                     transform="rotate(18 102 65)"
+                     fill="#5e9f2d"/>
+
+            <!-- right leaf -->
+            <ellipse cx="204" cy="20"
+                     rx="40" ry="18"
+                     transform="rotate(-25 204 20)"
+                     fill="#82bd45"/>
+
+            <!-- upper leaf -->
+            <ellipse cx="165" cy="16"
+                     rx="32" ry="15"
+                     transform="rotate(-10 165 16)"
+                     fill="#69aa32"/>
+
+            <!-- soybean pods -->
+            <g fill="#8fc83f">
+                <path d="M158 55
+                         C145 67 148 103 160 112
+                         C172 103 174 68 158 55Z"/>
+
+                <path d="M180 48
+                         C167 62 170 96 183 105
+                         C194 94 196 60 180 48Z"/>
+
+                <path d="M202 48
+                         C190 62 193 91 205 99
+                         C216 88 217 59 202 48Z"/>
+            </g>
+
+            <!-- soybean seeds -->
+            <g fill="#d8b86a">
+                <circle cx="225" cy="108" r="13"/>
+                <circle cx="252" cy="104" r="13"/>
+                <circle cx="239" cy="128" r="13"/>
+                <circle cx="268" cy="124" r="12"/>
+            </g>
+
+        </svg>
+
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="header-divider"></div>
+
+    <!-- TITLE -->
+    <div class="header-text">
         <h1 class="title">Soybean Genomics Atlas</h1>
         <div class="university">Tennessee State University</div>
-    </header>
+    </div>
 
-    <main class="content">
-        <p>Website under development.</p>
-    </main>
+</header>
+
+<main class="main-content">
+    <p class="placeholder">Website under development.</p>
+</main>
 
 </body>
 </html>
