@@ -1,166 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Soybean Genomics Atlas</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soybean Genomics Atlas</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #fff;
+      color: #000;
+    }
 
-<style>
-* {
-    box-sizing: border-box;
-}
-
-html, body {
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    font-family: Arial, Helvetica, sans-serif;
-    background: #ffffff;
-    color: #000000;
-}
-
-/* ================= HEADER ================= */
-
-.site-header {
-    height: 165px;
-    width: 100%;
-    background: #000000;
-    color: #ffffff;
-
-    display: flex;
-    align-items: center;
-
-    padding: 15px 30px;
-}
-
-/* Soybean illustration */
-
-.soybean-area {
-    width: 285px;
-    height: 135px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.soybean-svg {
-    width: 250px;
-    height: 125px;
-}
-
-/* Divider */
-
-.header-divider {
-    width: 1px;
-    height: 110px;
-    background: #bdbdbd;
-    margin: 0 30px;
-}
-
-/* Title */
-
-.header-text {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.title {
-    margin: 0;
-    font-size: 38px;
-    line-height: 1.15;
-    font-weight: 700;
-}
-
-.university {
-    margin-top: 8px;
-    font-size: 21px;
-    font-weight: 500;
-}
-
-/* ================= MAIN ================= */
-
-.main-content {
-    min-height: calc(100vh - 165px);
-    padding: 38px 30px;
-}
-
-.placeholder {
-    margin: 0;
-    font-size: 16px;
-}
-
-/* ================= MOBILE ================= */
-
-@media (max-width: 700px) {
-
+    /* Header design approved for the Soybean Genomics Atlas */
     .site-header {
-        height: 120px;
-        padding: 10px 15px;
-    }
-
-    .soybean-area {
-        width: 150px;
-        height: 100px;
-    }
-
-    .soybean-svg {
-        width: 140px;
-        height: 90px;
-    }
-
-    .header-divider {
-        height: 80px;
-        margin: 0 15px;
-    }
-
-    .title {
-        font-size: 24px;
-    }
-
-    .university {
-        font-size: 15px;
+      width: 100%;
+      height: 255px;
+      background: #000 url("images/soybean-atlas-header.png?v=1") left top / 100% 255px no-repeat;
+      overflow: hidden;
     }
 
     .main-content {
-        padding: 25px 15px;
+      min-height: calc(100vh - 255px);
+      padding: 50px 30px;
     }
-}
-</style>
+
+    .placeholder {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    @media (max-width: 900px) {
+      .site-header {
+        height: 180px;
+        background-size: auto 180px;
+        background-position: left top;
+      }
+      .main-content {
+        min-height: calc(100vh - 180px);
+        padding: 28px 20px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .site-header {
+        height: 140px;
+        background-size: auto 140px;
+      }
+      .main-content {
+        min-height: calc(100vh - 140px);
+        padding: 22px 16px;
+      }
+    }
+  </style>
 </head>
-
 <body>
+  <header class="site-header" aria-label="Soybean Genomics Atlas header"></header>
 
-<header class="site-header">
-
-    <!-- SOYBEAN PLANT -->
-    <div class="soybean-area">
-        <img
-            class="soybean-logo"
-            src="images/soybean-real-plant.png?v=3"
-            alt="Soybean plant"
-        >
-    </div>
-
-    </div>
-
-    <!-- DIVIDER -->
-    <div class="header-divider"></div>
-
-    <!-- TITLE -->
-    <div class="header-text">
-        <h1 class="title">Soybean Genomics Atlas</h1>
-        <div class="university">Tennessee State University</div>
-    </div>
-
-</header>
-
-<main class="main-content">
+  <main class="main-content">
     <p class="placeholder">Website under development.</p>
-</main>
-
+  </main>
 </body>
 </html>
