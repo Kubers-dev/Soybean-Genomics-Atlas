@@ -412,10 +412,208 @@
     ).join("");
   }
 
+  function renderStatsPlots(){
+    const names = [];
+    const means = [];
+    const sds = [];
+    const cvs = [];
+    const h2s = [];
+
+    traits.forEach(t=>{
+      const vals = rows.map(r=>num(r[t])).filter(Number.isFinite);
+      if(!vals.length) return;
+
+      const m = mean(vals);
+      const s = sd(vals);
+      const cv = Number.isFinite(m) && m !== 0 ? Math.abs(s/m*100) : NaN;
+      const vc = varianceComponents(t);
+
+      names.push(t);
+      means.push(m);
+      sds.push(Number.isFinite(s) ? s : 0);
+      cvs.push(Number.isFinite(cv) ? cv : 0);
+      h2s.push(Number.isFinite(vc.h2) ? vc.h2 : NaN);
+    });
+
+    draw("statsMeanPlot",[{
+      x:names,
+      y:means,
+      type:"bar",
+      error_y:{
+        type:"data",
+        array:sds,
+        visible:true
+      },
+      hovertemplate:
+        "<b>%{x}</b><br>Mean = %{y:.4g}<br>SD = %{error_y.array:.4g}<extra></extra>"
+    }],{
+      ...plotBase("Trait mean ± SD","Trait","Mean"),
+      xaxis:{...plotBase("","","").xaxis,tickangle:-45},
+      showlegend:false
+    });
+
+    draw("statsCVPlot",[{
+      x:names,
+      y:cvs,
+      type:"bar",
+      hovertemplate:"<b>%{x}</b><br>CV = %{y:.2f}%<extra></extra>"
+    }],{
+      ...plotBase("Trait coefficient of variation","Trait","CV (%)"),
+      xaxis:{...plotBase("","","").xaxis,tickangle:-45},
+      showlegend:false
+    });
+
+    const h2Names = [];
+    const h2Values = [];
+
+    names.forEach((t,i)=>{
+      if(Number.isFinite(h2s[i])){
+        h2Names.push(t);
+        h2Values.push(h2s[i]);
+      }
+    });
+
+    if(h2Names.length){
+      draw("statsH2Plot",[{
+        x:h2Names,
+        y:h2Values,
+        type:"bar",
+        hovertemplate:"<b>%{x}</b><br>H² = %{y:.3f}<extra></extra>"
+      }],{
+        ...plotBase("Broad-sense heritability","Trait","H²"),
+        xaxis:{...plotBase("","","").xaxis,tickangle:-45},
+        yaxis:{...plotBase("","","").yaxis,range:[0,1]},
+        showlegend:false
+      });
+    }else{
+      draw("statsH2Plot",[],plotBase("Broad-sense heritability","Trait","H²"));
+    }
+  }
+
+  function renderQCPlots(){
+    const names = [];
+    const outlierCounts = [];
+    const cvs = [];
+
+    traits.forEach(t=>{
+      const vals = rows.map(r=>num(r[t])).filter(Number.isFinite);
+      if(!vals.length) return;
+
+      const m = mean(vals);
+      const s = sd(vals);
+
+      let outliers = 0;
+      if(Number.isFinite(s) && s > 0){
+        vals.forEach(v=>{
+          if(Math.abs(v-m)>3*s) outliers++;
+        });
+      }
+
+      const cv = Number.isFinite(m) && m !== 0 && Number.isFinite(s)
+        ? Math.abs(s/m*100)
+        : 0;
+
+      names.push(t);
+      outlierCounts.push(outliers);
+      cvs.push(cv);
+    });
+
+    draw("qcOutlierPlot",[{
+      x:names,
+      y:outlierCounts,
+      type:"bar",
+      hovertemplate:"<b>%{x}</b><br>Potential outliers = %{y}<extra></extra>"
+    }],{
+      ...plotBase("Potential outliers by trait","Trait","Outlier count"),
+      xaxis:{...plotBase("","","").xaxis,tickangle:-45},
+      showlegend:false
+    });
+
+    draw("qcCVPlot",[{
+      x:names,
+      y:cvs,
+      type:"bar",
+      hovertemplate:"<b>%{x}</b><br>CV = %{y:.2f}%<extra></extra>"
+    }],{
+      ...plotBase("Replicate / phenotype variability","Trait","CV (%)"),
+      xaxis:{...plotBase("","","").xaxis,tickangle:-45},
+      showlegend:false
+    });
+
+    if(replicateKey){
+      const reps = [...new Set(
+        rows.map(r=>String(r[replicateKey]??"").trim()).filter(Boolean)
+      )];
+
+      if(reps.length >= 2){
+        const repA = new Map();
+        const repB = new Map();
+
+        rows.forEach(r=>{
+          const a = String(r[accessionKey]??"").trim();
+          const rep = String(r[replicateKey]??"").trim();
+          const v = num(r[traits[0]]);
+          if(!a || !rep || !Number.isFinite(v)) return;
+
+          if(rep === reps[0]) repA.set(a,v);
+          if(rep === reps[1]) repB.set(a,v);
+        });
+
+        const x = [];
+        const y = [];
+        const labels = [];
+
+        repA.forEach((v,a)=>{
+          if(repB.has(a)){
+            x.push(v);
+            y.push(repB.get(a));
+            labels.push(a);
+          }
+        });
+
+        const r = pearson(x,y);
+
+        draw("qcReplicatePlot",[{
+          x:x,
+          y:y,
+          text:labels,
+          mode:"markers",
+          type:"scatter",
+          marker:{size:8},
+          hovertemplate:
+            "<b>%{text}</b><br>" +
+            `${reps[0]} = %{x:.4g}<br>` +
+            `${reps[1]} = %{y:.4g}<extra></extra>`
+        }],{
+          ...plotBase(
+            `Replicate consistency${Number.isFinite(r) ? ` (r = ${r.toFixed(3)})` : ""}`,
+            reps[0],
+            reps[1]
+          ),
+          showlegend:false
+        });
+      }else{
+        draw(
+          "qcReplicatePlot",
+          [],
+          plotBase("Replicate consistency","Replicate 1","Replicate 2")
+        );
+      }
+    }else{
+      draw(
+        "qcReplicatePlot",
+        [],
+        plotBase("Replicate consistency","Replicate 1","Replicate 2")
+      );
+    }
+  }
+
   function renderAll(){
     renderPlots();
     renderStats();
     renderQC();
+    renderStatsPlots();
+    renderQCPlots();
   }
 
   function plotDownload(key){const map={distribution:"distributionPlot",replicates:"replicatePlot",means:"meansPlot",scatter:"scatterPlot",correlation:"correlationPlot",pca:"pcaPlot"};const id=map[key];if(!currentPlots[id])return;Plotly.downloadImage($(id),{format:"svg",filename:`soybean_${key}`,width:1600,height:key==="correlation"||key==="pca"?1000:900,scale:1})}

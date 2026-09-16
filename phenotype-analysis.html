@@ -267,6 +267,34 @@ html, body {
     <h2>Trait statistics</h2>
     <p class="method-note">For each trait, the table summarizes the observed phenotype distribution, replicate structure, variance components, and broad-sense heritability estimated from replicated observations.</p>
 
+    <div class="plot-grid stats-plot-grid">
+
+      <article class="plot-card">
+        <div class="plot-title">
+          <h3>Trait mean ± SD</h3>
+          <button data-download="statsMean">Download</button>
+        </div>
+        <div id="statsMeanPlot" class="plot"></div>
+      </article>
+
+      <article class="plot-card">
+        <div class="plot-title">
+          <h3>Trait coefficient of variation</h3>
+          <button data-download="statsCV">Download</button>
+        </div>
+        <div id="statsCVPlot" class="plot"></div>
+      </article>
+
+      <article class="plot-card plot-wide">
+        <div class="plot-title">
+          <h3>Broad-sense heritability</h3>
+          <button data-download="statsH2">Download</button>
+        </div>
+        <div id="statsH2Plot" class="plot"></div>
+      </article>
+
+    </div>
+
     <div class="table-wrap">
       <table id="statsTable">
         <thead>
@@ -285,6 +313,34 @@ html, body {
     <h2>Quality control</h2>
 
     <div id="qcSummary" class="qc-grid"></div>
+
+    <div class="plot-grid qc-plot-grid">
+
+      <article class="plot-card">
+        <div class="plot-title">
+          <h3>Replicate consistency</h3>
+          <button data-download="qcReplicate">Download</button>
+        </div>
+        <div id="qcReplicatePlot" class="plot"></div>
+      </article>
+
+      <article class="plot-card">
+        <div class="plot-title">
+          <h3>Outlier count by trait</h3>
+          <button data-download="qcOutliers">Download</button>
+        </div>
+        <div id="qcOutlierPlot" class="plot"></div>
+      </article>
+
+      <article class="plot-card plot-wide">
+        <div class="plot-title">
+          <h3>Replicate variability</h3>
+          <button data-download="qcCV">Download</button>
+        </div>
+        <div id="qcCVPlot" class="plot"></div>
+      </article>
+
+    </div>
 
     <div class="table-wrap">
       <table id="outlierTable">
