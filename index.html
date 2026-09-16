@@ -12,52 +12,29 @@
       background: #fff;
       color: #000;
     }
-
-    /* Header design approved for the Soybean Genomics Atlas */
     .site-header {
       width: 100%;
       height: 255px;
-      background: #000 url("images/soybean-atlas-header.png?v=1") left top / 100% 255px no-repeat;
+      background: #000 url("images/soybean-atlas-header-clear.png?v=1") center top / cover no-repeat;
       overflow: hidden;
     }
-
     .main-content {
       min-height: calc(100vh - 255px);
       padding: 50px 30px;
     }
-
-    .placeholder {
-      font-size: 18px;
-      margin: 0;
-    }
-
+    .placeholder { font-size: 18px; margin: 0; }
     @media (max-width: 900px) {
-      .site-header {
-        height: 180px;
-        background-size: auto 180px;
-        background-position: left top;
-      }
-      .main-content {
-        min-height: calc(100vh - 180px);
-        padding: 28px 20px;
-      }
+      .site-header { height: 180px; background-size: cover; background-position: center top; }
+      .main-content { min-height: calc(100vh - 180px); padding: 28px 20px; }
     }
-
     @media (max-width: 520px) {
-      .site-header {
-        height: 140px;
-        background-size: auto 140px;
-      }
-      .main-content {
-        min-height: calc(100vh - 140px);
-        padding: 22px 16px;
-      }
+      .site-header { height: 140px; background-size: cover; background-position: center top; }
+      .main-content { min-height: calc(100vh - 140px); padding: 22px 16px; }
     }
   </style>
 </head>
 <body>
   <header class="site-header" aria-label="Soybean Genomics Atlas header"></header>
-
   <main class="main-content">
     <p class="placeholder">Website under development.</p>
   </main>
