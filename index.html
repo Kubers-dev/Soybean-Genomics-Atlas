@@ -149,12 +149,82 @@ html, body {
 
   <main class="main-content">
 
-    <p class="placeholder">
-      Website under development.
-    </p>
+    <!-- =====================================================
+         GENE EXPLORER
+         ===================================================== -->
+
+    <section class="gene-explorer">
+
+      <h2>Gene Explorer</h2>
+
+      <p class="gene-description">
+        Search the soybean Wm82.a6.v1 genome by Gene ID.
+      </p>
+
+      <div class="gene-search">
+
+        <input
+          id="geneInput"
+          type="text"
+          placeholder="Enter Gene ID (e.g. Glyma.01G000100)"
+          autocomplete="off"
+        >
+
+        <button id="geneSearchButton">
+          Search
+        </button>
+
+      </div>
+
+      <div id="geneMessage" class="gene-message"></div>
+
+      <div id="geneResults" class="gene-results" hidden>
+
+        <div class="gene-info">
+
+          <h3>Gene Information</h3>
+
+          <div class="info-grid">
+
+            <div>
+              <span>Gene ID</span>
+              <strong id="resultGene"></strong>
+            </div>
+
+            <div>
+              <span>Genome</span>
+              <strong id="resultGenome"></strong>
+            </div>
+
+            <div>
+              <span>Chromosome</span>
+              <strong id="resultChromosome"></strong>
+            </div>
+
+            <div>
+              <span>Gene Position</span>
+              <strong id="resultPosition"></strong>
+            </div>
+
+            <div>
+              <span>Strand</span>
+              <strong id="resultStrand"></strong>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div id="sequenceResults"></div>
+
+      </div>
+
+    </section>
 
   </main>
 
+
+  <script src="js/gene-explorer.js"></script>
 
 </body>
 </html>

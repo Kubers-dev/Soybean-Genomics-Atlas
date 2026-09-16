@@ -1,0 +1,12 @@
+# Large local reference genome
+data/a6/genome/
+
+# Raw reference annotation/sequence files
+data/a6/*.fna.gz
+data/a6/*.faa.gz
+data/a6/*.gff3.gz
+
+# Local/server files
+__pycache__/
+*.pyc
+.DS_Store

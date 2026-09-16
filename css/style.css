@@ -1,0 +1,291 @@
+
+/* =========================================================
+   GENE EXPLORER
+   ========================================================= */
+
+.gene-explorer {
+  max-width: 1200px;
+  margin: 45px auto;
+  padding: 0 30px 60px;
+}
+
+.gene-explorer h2 {
+  margin: 0;
+  font-size: 32px;
+}
+
+.gene-description {
+  margin-top: 8px;
+  color: #666;
+}
+
+.gene-search {
+  display: flex;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+#geneInput {
+  flex: 1;
+  max-width: 600px;
+  padding: 14px 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+#geneSearchButton {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.gene-message {
+  margin-top: 15px;
+  min-height: 24px;
+}
+
+.gene-results {
+  margin-top: 25px;
+}
+
+.gene-info {
+  padding: 25px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+}
+
+.gene-info h3 {
+  margin-top: 0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+
+.info-grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.info-grid span {
+  font-size: 13px;
+  color: #777;
+}
+
+.sequence-card {
+  margin-top: 25px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.sequence-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.sequence-header h3 {
+  margin: 0;
+}
+
+.sequence-meta {
+  color: #777;
+  font-size: 14px;
+}
+
+.sequence-box {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f6f6f6;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.copy-sequence {
+  padding: 8px 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  background: white;
+}
+
+@media (max-width: 800px) {
+
+  .info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gene-search {
+    flex-direction: column;
+  }
+
+  #geneInput {
+    max-width: none;
+  }
+
+}
+
+
+/* =========================================================
+   GENE EXPLORER - FASTA SEQUENCE DISPLAY
+   ========================================================= */
+
+.sequence-block {
+  margin: 12px 0 28px 0;
+}
+
+.sequence-header {
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.sequence-box {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: #f7f9f7;
+  border: 1px solid #cfd8cf;
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: hidden;
+}
+
+.sequence-box pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #222;
+}
+
+.fasta-header {
+  color: #245c36;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.copy-sequence-btn {
+  margin-top: 7px;
+  padding: 5px 11px;
+  border: 1px solid #b8c7ba;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.copy-sequence-btn:hover {
+  background: #eef5ef;
+}
+
+
+/* ============================================================
+   GENE EXPLORER SEQUENCE DISPLAY
+   ============================================================ */
+
+.sequence-box {
+  white-space: pre-wrap;
+  overflow-x: auto;
+  overflow-y: auto;
+  word-break: normal;
+  overflow-wrap: normal;
+
+  font-family:
+    "Courier New",
+    Courier,
+    monospace;
+
+  font-size: 13px;
+  line-height: 1.65;
+
+  max-height: 500px;
+
+  padding: 16px;
+
+  background: #f7f9f7;
+
+  border: 1px solid #d8ded8;
+
+  border-radius: 8px;
+
+  letter-spacing: 0.02em;
+}
+
+.genomic-card {
+  border: 2px solid #b8cdb8;
+}
+
+.genomic-region {
+  margin: 10px 0 14px 0;
+
+  padding: 10px 14px;
+
+  background: #eef5ee;
+
+  border-left: 4px solid #4d7654;
+
+  border-radius: 5px;
+
+  font-family:
+    Arial,
+    sans-serif;
+
+  font-size: 14px;
+
+  line-height: 1.5;
+}
+
+.genomic-sequence-box {
+  max-height: 650px;
+
+  font-size: 12px;
+
+  line-height: 1.7;
+}
+
+.sequence-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sequence-buttons button {
+  cursor: pointer;
+}
+
+.copy-sequence {
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+
+  .sequence-box {
+    font-size: 11px;
+    padding: 12px;
+  }
+
+  .sequence-buttons {
+    margin-top: 8px;
+  }
+
+}
