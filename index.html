@@ -3,126 +3,342 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Soybean Genomics Atlas</title>
 
   <style>
+    /* =========================================================
+       EASY POSITION CONTROLS
+       ========================================================= */
+
+    :root {
+      /* Change ONLY this number to move the plant */
+      --plant-x: 0px;
+
+      /* Plant size */
+      --plant-width: 450px;
+      --plant-height: 430px;
+
+      /* Header height */
+      --header-height: 430px;
+
+      /* Divider position */
+      --divider-margin-left: 10px;
+      --divider-margin-right: 60px;
+
+      /* Heading */
+      --title-size: 72px;
+      --subtitle-size: 36px;
+    }
+
+
+    /* =========================================================
+       PAGE
+       ========================================================= */
+
     * {
       box-sizing: border-box;
     }
 
-    html, body {
+    html,
+    body {
       margin: 0;
-      padding: 0 8px;
+      padding: 0;
       width: 100%;
+      min-height: 100%;
       background: #ffffff;
-      color: #000000;
       font-family: Arial, Helvetica, sans-serif;
     }
 
+
     /* =========================================================
-       SOYBEAN ATLAS HEADER
+       SOYBEAN GENOMICS ATLAS HEADER
        ========================================================= */
 
     .site-header {
-      width: 100% !important;
-      height: 450px !important;
-      min-height: 450px !important;
-      background: #000 !important;
-      display: flex !important;
-      align-items: center !important;
-      overflow: hidden !important;
-      padding: 0 !important;
-      margin: 0 !important;
+      width: 100%;
+      height: var(--header-height);
+
+      background: #000000;
+
+      display: flex;
+      align-items: center;
+
+      overflow: hidden;
+
+      padding: 0;
+      margin: 0;
     }
 
+
+    /* =========================================================
+       PLANT
+       ========================================================= */
+
     .header-plant {
-      width: 500px !important;
-      height: 450px !important;
-      min-width: 500px !important;
-      flex: 0 0 500px !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      overflow: visible !important;
-      margin: 0 !important;
-      padding: 0 !important;
+      width: 500px;
+      height: var(--header-height);
+
+      flex: 0 0 500px;
+
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+
+      overflow: visible;
+
+      padding: 0;
+      margin: 0;
+
+      transform: translateX(var(--plant-x));
     }
 
     .header-plant img {
-      display: block !important;
-      width: 450px !important;
-      height: 430px !important;
-      max-width: none !important;
-      object-fit: contain !important;
-      object-position: center center !important;
-      transform: none !important;
-      margin: 0 !important;
+      display: block;
+
+      width: var(--plant-width);
+      height: var(--plant-height);
+
+      object-fit: contain;
+      object-position: left center;
+
+      margin: 0;
+      padding: 0;
     }
+
+
+    /* =========================================================
+       VERTICAL DIVIDER
+       ========================================================= */
 
     .header-divider {
-      width: 2px !important;
-      height: 315px !important;
-      flex: 0 0 2px !important;
-      background: #8a8a8a !important;
-      margin: 0 55px 0 12px !important;
+      width: 2px;
+      height: 315px;
+
+      flex: 0 0 2px;
+
+      background: #8a8a8a;
+
+      margin-left: var(--divider-margin-left);
+      margin-right: var(--divider-margin-right);
     }
 
+
+    /* =========================================================
+       HEADER TEXT
+       ========================================================= */
+
     .header-text {
-      color: #fff !important;
-      min-width: 0 !important;
-      line-height: 1 !important;
+      min-width: 0;
+
+      color: #ffffff;
+
+      margin: 0;
+      padding: 0;
     }
 
     .header-title {
-      margin: 0 !important;
-      font-size: 72px !important;
-      line-height: 1.12 !important;
-      font-weight: 700 !important;
-      white-space: nowrap !important;
+      margin: 0;
+
+      font-size: var(--title-size);
+      line-height: 1.1;
+
+      font-weight: 700;
+
+      color: #ffffff;
+
+      white-space: nowrap;
     }
 
     .header-university {
-      margin: 18px 0 0 !important;
-      font-size: 48px !important;
-      line-height: 1.1 !important;
-      font-weight: 400 !important;
-      white-space: nowrap !important;
+      margin: 12px 0 0;
+
+      font-size: var(--subtitle-size);
+      line-height: 1.1;
+
+      font-weight: 400;
+
+      color: #ffffff;
+
+      white-space: nowrap;
     }
 
+
+    /* =========================================================
+       MAIN PAGE
+       ========================================================= */
+
     .main-content {
-      min-height: calc(100vh - 450px);
-      padding: 32px 24px;
+      min-height: calc(100vh - var(--header-height));
+
       background: #ffffff;
+
+      padding: 30px 24px;
     }
 
     .placeholder {
       margin: 0;
+
       font-size: 14px;
+
       color: #111111;
+    }
+
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @media (max-width: 1200px) {
+
+      :root {
+        --plant-width: 380px;
+        --plant-height: 380px;
+        --header-height: 390px;
+
+        --title-size: 58px;
+        --subtitle-size: 30px;
+      }
+
+      .header-plant {
+        width: 430px;
+        flex-basis: 430px;
+      }
+
+      .header-divider {
+        height: 285px;
+        margin-right: 45px;
+      }
+    }
+
+
+    @media (max-width: 900px) {
+
+      :root {
+        --plant-width: 300px;
+        --plant-height: 320px;
+        --header-height: 330px;
+
+        --title-size: 42px;
+        --subtitle-size: 24px;
+      }
+
+      .header-plant {
+        width: 340px;
+        flex-basis: 340px;
+      }
+
+      .header-divider {
+        height: 240px;
+        margin-right: 30px;
+      }
+    }
+
+
+    @media (max-width: 650px) {
+
+      :root {
+        --plant-width: 190px;
+        --plant-height: 230px;
+        --header-height: 240px;
+
+        --title-size: 27px;
+        --subtitle-size: 17px;
+      }
+
+      .header-plant {
+        width: 215px;
+        flex-basis: 215px;
+      }
+
+      .header-divider {
+        height: 170px;
+        margin-left: 5px;
+        margin-right: 18px;
+      }
+
+      .header-university {
+        margin-top: 7px;
+      }
+    }
+
+
+    @media (max-width: 450px) {
+
+      :root {
+        --plant-width: 130px;
+        --plant-height: 170px;
+        --header-height: 180px;
+
+        --title-size: 20px;
+        --subtitle-size: 13px;
+      }
+
+      .header-plant {
+        width: 145px;
+        flex-basis: 145px;
+      }
+
+      .header-divider {
+        height: 125px;
+        margin-left: 3px;
+        margin-right: 10px;
+      }
     }
 
   </style>
 </head>
 
+
 <body>
-  <header class="site-header" aria-label="Soybean Genomics Atlas header">
+
+  <!-- =======================================================
+       SOYBEAN GENOMICS ATLAS HEADER
+       ======================================================= -->
+
+  <header class="site-header">
+
     <div class="header-plant">
       <img
-        src="images/soybean-real-plant.png?v=4"
+        src="images/soybean-real-plant.png"
         alt="Soybean plant"
       >
     </div>
 
-    <div class="header-divider" aria-hidden="true"></div>
+
+    <div
+      class="header-divider"
+      aria-hidden="true">
+    </div>
+
 
     <div class="header-text">
-      <h1 class="header-title">Soybean Genomics Atlas</h1>
-      <p class="header-university">Tennessee State University</p>
+
+      <h1 class="header-title">
+        Soybean Genomics Atlas
+      </h1>
+
+      <p class="header-university">
+        Tennessee State University
+      </p>
+
     </div>
+
   </header>
 
+
+  <!-- =======================================================
+       MAIN CONTENT
+       ======================================================= -->
+
   <main class="main-content">
-    <p class="placeholder">Website under development.</p>
+
+    <p class="placeholder">
+      Website under development.
+    </p>
+
   </main>
+
+
 </body>
 </html>
