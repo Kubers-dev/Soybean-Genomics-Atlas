@@ -89,6 +89,37 @@ html, body {
   white-space: nowrap;
 }
 
+.header-nav {
+  margin-left: auto;
+  margin-right: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-nav a {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border: 1px solid #666666;
+  border-radius: 5px;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.header-nav a:hover {
+  background: #222222;
+  border-color: #ffffff;
+}
+
+.header-nav a.active {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
 .main-content {
   min-height: calc(100vh - 112px);
   padding: 31px 20px;
@@ -139,6 +170,18 @@ html, body {
       </p>
 
     </div>
+
+    <nav class="header-nav" aria-label="Atlas navigation">
+
+      <a href="index.html" class="active">
+        Gene Explorer
+      </a>
+
+      <a href="phenotype-analysis.html">
+        Phenotype &amp; GWAS Analysis
+      </a>
+
+    </nav>
 
   </header>
 
