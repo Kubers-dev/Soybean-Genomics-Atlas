@@ -412,6 +412,12 @@
     ).join("");
   }
 
+  function renderAll(){
+    renderPlots();
+    renderStats();
+    renderQC();
+  }
+
   function plotDownload(key){const map={distribution:"distributionPlot",replicates:"replicatePlot",means:"meansPlot",scatter:"scatterPlot",correlation:"correlationPlot",pca:"pcaPlot"};const id=map[key];if(!currentPlots[id])return;Plotly.downloadImage($(id),{format:"svg",filename:`soybean_${key}`,width:1600,height:key==="correlation"||key==="pca"?1000:900,scale:1})}
   document.querySelectorAll("[data-download]").forEach(b=>b.addEventListener("click",()=>plotDownload(b.dataset.download)));
   $("phenotypeFile").addEventListener("change",e=>{if(e.target.files[0])parseWorkbook(e.target.files[0])});
