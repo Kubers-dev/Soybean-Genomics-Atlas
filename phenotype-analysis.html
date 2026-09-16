@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phenotype & GWAS Analysis | Soybean Genomics Atlas</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/phenotype-analysis.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+<main class="phenotype-page">
+  <section class="atlas-panel phenotype-hero">
+    <div>
+      <div class="eyebrow">SOYBEAN GENOMICS ATLAS</div>
+      <h1>Phenotype &amp; GWAS Analysis</h1>
+      <p>Upload replicated soybean phenotype data, perform quality control and quantitative-genetic analyses, visualize traits, and export manuscript-ready figures and GWAS-ready phenotype matrices.</p>
+    </div>
+    <div class="upload-card">
+      <label class="upload-label" for="phenotypeFile">Upload CSV or Excel phenotype data</label>
+      <input id="phenotypeFile" type="file" accept=".csv,.tsv,.txt,.xlsx,.xls">
+      <div class="upload-hint">Recommended columns: <b>Accession</b>, <b>Replicate</b>, followed by numeric traits.</div>
+      <div id="uploadMessage" class="status-message"></div>
+    </div>
+  </section>
+
+  <section id="overviewSection" class="atlas-panel" hidden>
+    <div class="section-heading"><div><div class="eyebrow">01 · DATA OVERVIEW</div><h2>Dataset summary</h2></div></div>
+    <div id="summaryCards" class="metric-grid"></div>
+    <div id="dataWarnings" class="notice-stack"></div>
+  </section>
+
+  <section id="analysisSection" class="atlas-panel" hidden>
+    <div class="analysis-toolbar">
+      <div>
+        <div class="eyebrow">02 · TRAIT ANALYSIS</div>
+        <h2>Explore your phenotype data</h2>
+      </div>
+      <div class="control-group">
+        <label for="traitSelect">Trait</label>
+        <select id="traitSelect"></select>
+      </div>
+      <div class="control-group">
+        <label for="trait2Select">Second trait</label>
+        <select id="trait2Select"></select>
+      </div>
+    </div>
+
+    <div class="plot-grid">
+      <article class="plot-card"><div class="plot-title"><h3>Trait distribution</h3><button data-download="distribution">Download</button></div><div id="distributionPlot" class="plot"></div></article>
+      <article class="plot-card"><div class="plot-title"><h3>Replicate consistency</h3><button data-download="replicates">Download</button></div><div id="replicatePlot" class="plot"></div></article>
+      <article class="plot-card"><div class="plot-title"><h3>Accession means</h3><button data-download="means">Download</button></div><div id="meansPlot" class="plot"></div></article>
+      <article class="plot-card"><div class="plot-title"><h3>Trait relationship</h3><button data-download="scatter">Download</button></div><div id="scatterPlot" class="plot"></div></article>
+      <article class="plot-card plot-wide"><div class="plot-title"><h3>Trait correlation matrix</h3><button data-download="correlation">Download</button></div><div id="correlationPlot" class="plot tall"></div></article>
+      <article class="plot-card plot-wide"><div class="plot-title"><h3>PCA — selected numeric traits</h3><button data-download="pca">Download</button></div><div id="pcaPlot" class="plot tall"></div></article>
+    </div>
+  </section>
+
+  <section id="statsSection" class="atlas-panel" hidden>
+    <div class="eyebrow">03 · QUANTITATIVE GENETICS</div>
+    <h2>Trait statistics &amp; variance components</h2>
+    <div class="table-wrap"><table id="statsTable"><thead><tr><th>Trait</th><th>N</th><th>Accessions</th><th>Mean</th><th>SD</th><th>CV %</th><th>Min</th><th>Max</th><th>H²*</th></tr></thead><tbody></tbody></table></div>
+    <p class="method-note">* H² is estimated from one-way genotype ANOVA for balanced replicated data. It is shown only when the required balanced replicate structure is available; for unbalanced or complex designs, use a dedicated mixed-model analysis.</p>
+  </section>
+
+  <section id="qcSection" class="atlas-panel" hidden>
+    <div class="eyebrow">04 · QUALITY CONTROL</div>
+    <h2>Potential outliers and replicate quality</h2>
+    <div id="qcSummary" class="qc-grid"></div>
+    <div class="table-wrap"><table id="outlierTable"><thead><tr><th>Accession</th><th>Replicate</th><th>Trait</th><th>Value</th><th>Reason</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section id="exportSection" class="atlas-panel" hidden>
+    <div class="eyebrow">05 · GWAS PREPARATION</div>
+    <h2>Export analysis results</h2>
+    <div class="export-grid">
+      <button id="downloadGWAS" class="primary-action">Download GWAS-ready phenotype CSV</button>
+      <button id="downloadStats">Download trait statistics CSV</button>
+      <button id="downloadReport">Download analysis report</button>
+    </div>
+    <p class="method-note">The GWAS export contains one row per accession and the mean across available replicates for each trait. It does not alter the source file.</p>
+  </section>
+</main>
+<script src="js/phenotype-analysis.js"></script>
+</body>
+</html>
