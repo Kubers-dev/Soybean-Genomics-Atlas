@@ -7,286 +7,102 @@
   <title>Soybean Genomics Atlas</title>
 
   <style>
-    /* =========================================================
-       EASY POSITION CONTROLS
-       ========================================================= */
-
-    :root {
-      /* Change ONLY this number to move the plant */
-      --plant-x: 0px;
-
-      /* Plant size */
-      --plant-width: 450px;
-      --plant-height: 430px;
-
-      /* Header height */
-      --header-height: 430px;
-
-      /* Divider position */
-      --divider-margin-left: 10px;
-      --divider-margin-right: 60px;
-
-      /* Heading */
-      --title-size: 72px;
-      --subtitle-size: 36px;
-    }
-
-
-    /* =========================================================
-       PAGE
-       ========================================================= */
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      min-height: 100%;
-      background: #ffffff;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-
-    /* =========================================================
-       SOYBEAN GENOMICS ATLAS HEADER
-       ========================================================= */
-
-    .site-header {
-      width: 100%;
-      height: var(--header-height);
-
-      background: #000000;
-
-      display: flex;
-      align-items: center;
-
-      overflow: hidden;
-
-      padding: 0;
-      margin: 0;
-    }
-
-
-    /* =========================================================
-       PLANT
-       ========================================================= */
-
-    .header-plant {
-      width: 500px;
-      height: var(--header-height);
-
-      flex: 0 0 500px;
-
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-
-      overflow: visible;
-
-      padding: 0;
-      margin: 0;
-
-      transform: translateX(var(--plant-x));
-    }
-
-    .header-plant img {
-      display: block;
-
-      width: var(--plant-width);
-      height: var(--plant-height);
-
-      object-fit: contain;
-      object-position: left center;
-
-      margin: 0;
-      padding: 0;
-    }
-
-
-    /* =========================================================
-       VERTICAL DIVIDER
-       ========================================================= */
-
-    .header-divider {
-      width: 2px;
-      height: 315px;
-
-      flex: 0 0 2px;
-
-      background: #8a8a8a;
-
-      margin-left: var(--divider-margin-left);
-      margin-right: var(--divider-margin-right);
-    }
-
-
-    /* =========================================================
-       HEADER TEXT
-       ========================================================= */
-
-    .header-text {
-      min-width: 0;
-
-      color: #ffffff;
-
-      margin: 0;
-      padding: 0;
-    }
-
-    .header-title {
-      margin: 0;
-
-      font-size: var(--title-size);
-      line-height: 1.1;
-
-      font-weight: 700;
-
-      color: #ffffff;
-
-      white-space: nowrap;
-    }
-
-    .header-university {
-      margin: 12px 0 0;
-
-      font-size: var(--subtitle-size);
-      line-height: 1.1;
-
-      font-weight: 400;
-
-      color: #ffffff;
-
-      white-space: nowrap;
-    }
-
-
-    /* =========================================================
-       MAIN PAGE
-       ========================================================= */
-
-    .main-content {
-      min-height: calc(100vh - var(--header-height));
-
-      background: #ffffff;
-
-      padding: 30px 24px;
-    }
-
-    .placeholder {
-      margin: 0;
-
-      font-size: 14px;
-
-      color: #111111;
-    }
-
-
-    /* =========================================================
-       RESPONSIVE
-       ========================================================= */
-
-    @media (max-width: 1200px) {
-
-      :root {
-        --plant-width: 380px;
-        --plant-height: 380px;
-        --header-height: 390px;
-
-        --title-size: 58px;
-        --subtitle-size: 30px;
-      }
-
-      .header-plant {
-        width: 430px;
-        flex-basis: 430px;
-      }
-
-      .header-divider {
-        height: 285px;
-        margin-right: 45px;
-      }
-    }
-
-
-    @media (max-width: 900px) {
-
-      :root {
-        --plant-width: 300px;
-        --plant-height: 320px;
-        --header-height: 330px;
-
-        --title-size: 42px;
-        --subtitle-size: 24px;
-      }
-
-      .header-plant {
-        width: 340px;
-        flex-basis: 340px;
-      }
-
-      .header-divider {
-        height: 240px;
-        margin-right: 30px;
-      }
-    }
-
-
-    @media (max-width: 650px) {
-
-      :root {
-        --plant-width: 190px;
-        --plant-height: 230px;
-        --header-height: 240px;
-
-        --title-size: 27px;
-        --subtitle-size: 17px;
-      }
-
-      .header-plant {
-        width: 215px;
-        flex-basis: 215px;
-      }
-
-      .header-divider {
-        height: 170px;
-        margin-left: 5px;
-        margin-right: 18px;
-      }
-
-      .header-university {
-        margin-top: 7px;
-      }
-    }
-
-
-    @media (max-width: 450px) {
-
-      :root {
-        --plant-width: 130px;
-        --plant-height: 170px;
-        --header-height: 180px;
-
-        --title-size: 20px;
-        --subtitle-size: 13px;
-      }
-
-      .header-plant {
-        width: 145px;
-        flex-basis: 145px;
-      }
-
-      .header-divider {
-        height: 125px;
-        margin-left: 3px;
-        margin-right: 10px;
-      }
-    }
-
-  </style>
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  background: #ffffff;
+  color: #000000;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* EXACT HEADER LAYOUT */
+.site-header {
+  width: 100%;
+  height: 112px;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.header-plant {
+  width: 125px;
+  height: 112px;
+  flex: 0 0 125px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: visible;
+  margin: 0;
+  padding: 0;
+}
+
+.header-plant img {
+  display: block;
+  width: 125px;
+  height: 112px;
+  object-fit: contain;
+  object-position: left center;
+  margin: 0;
+  padding: 0;
+}
+
+.header-divider {
+  width: 1px;
+  height: 82px;
+  background: #777777;
+  flex: 0 0 1px;
+  margin-left: 19px;
+  margin-right: 16px;
+}
+
+.header-text {
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.header-title {
+  margin: 0;
+  padding: 0;
+  font-size: 30px;
+  line-height: 1.1;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.header-university {
+  margin: 7px 0 0 0;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.main-content {
+  min-height: calc(100vh - 112px);
+  padding: 31px 20px;
+  margin: 0;
+  background: #ffffff;
+}
+
+.placeholder {
+  margin: 0;
+  padding: 0;
+  font-size: 16px;
+  color: #111111;
+}
+</style>
 </head>
 
 
