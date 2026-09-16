@@ -610,13 +610,22 @@
 
   function renderAll(){
     renderPlots();
-    renderStats();
-    renderQC();
     renderStatsPlots();
     renderQCPlots();
+    renderStats();
+    renderQC();
   }
 
-  function plotDownload(key){const map={distribution:"distributionPlot",replicates:"replicatePlot",means:"meansPlot",scatter:"scatterPlot",correlation:"correlationPlot",pca:"pcaPlot"};const id=map[key];if(!currentPlots[id])return;Plotly.downloadImage($(id),{format:"svg",filename:`soybean_${key}`,width:1600,height:key==="correlation"||key==="pca"?1000:900,scale:1})}
+  function resizeAnalysisPlots(){
+    ["statsMeanPlot","statsCVPlot","statsH2Plot","qcReplicatePlot","qcOutlierPlot","qcCVPlot"].forEach(id=>{
+      const el=$(id);
+      if(el && el.data) Plotly.Plots.resize(el);
+    });
+  }
+
+  window.addEventListener("resize", resizeAnalysisPlots);
+
+  function plotDownload(key){const map={distribution:"distributionPlot",replicates:"replicatePlot",means:"meansPlot",scatter:"scatterPlot",correlation:"correlationPlot",pca:"pcaPlot",statsMean:"statsMeanPlot",statsCV:"statsCVPlot",statsH2:"statsH2Plot",qcReplicate:"qcReplicatePlot",qcOutliers:"qcOutlierPlot",qcCV:"qcCVPlot"};const id=map[key];if(!currentPlots[id])return;Plotly.downloadImage($(id),{format:"svg",filename:`soybean_${key}`,width:1600,height:key==="correlation"||key==="pca"?1000:900,scale:1})}
   document.querySelectorAll("[data-download]").forEach(b=>b.addEventListener("click",()=>plotDownload(b.dataset.download)));
   $("phenotypeFile").addEventListener("change",e=>{if(e.target.files[0])parseWorkbook(e.target.files[0])});
   $("downloadGWAS").addEventListener("click",()=>{const maps=traits.map(t=>[t,accessionMeans(t)]);const acc=[...new Set(rows.map(r=>String(r[accessionKey]).trim()).filter(Boolean))];const byTrait=maps.map(([t,a])=>[t,new Map(a.map(d=>[d.accession,d.mean]))]);const out=[["Taxa",...traits]];acc.forEach(a=>out.push([a,...byTrait.map(([,m])=>Number.isFinite(m.get(a))?m.get(a):"")]));download("soybean_GWAS_ready_phenotype.csv",out.map(r=>r.map(csvEscape).join(",")).join("\n"))});
