@@ -78,10 +78,93 @@
     else draw("replicatePlot",[],plotBase("Replicate analysis","Replicate","Value"));
 
     const am=accessionMeans(t).sort((a,b)=>b.mean-a.mean);const top=am.slice(0,Math.min(100,am.length));
-    draw("meansPlot",[{x:top.map(d=>d.accession),y:top.map(d=>d.mean),type:"bar",error_y:{type:"data",array:top.map(d=>Number.isFinite(d.sd)?d.sd:0),visible:true}}],plotBase(`${t}: accession means`,`Accession`,`Mean ± SD`));
+    const sortedMeans=top.slice().sort((a,b)=>a.mean-b.mean);
+    const meanTickStep=Math.max(1,Math.ceil(sortedMeans.length/18));
+    draw("meansPlot",[{
+      x:sortedMeans.map((d,i)=>i),
+      y:sortedMeans.map(d=>d.mean),
+      text:sortedMeans.map(d=>d.accession),
+      customdata:sortedMeans.map(d=>[d.accession,d.sd]),
+      mode:"markers",
+      type:"scatter",
+      marker:{size:7},
+      error_y:{
+        type:"data",
+        array:sortedMeans.map(d=>Number.isFinite(d.sd)?d.sd:0),
+        visible:true,
+        thickness:1.2,
+        width:4
+      },
+      hovertemplate:"%{customdata[0]}<br>Mean = %{y:.4g}<br>SD = %{customdata[1]:.4g}<extra></extra>"
+    }],{
+      ...plotBase(`${t}: accession means (± SD)`,"Accession","Mean ± SD"),
+      xaxis:{
+        title:"Accessions (sorted by mean)",
+        tickmode:"array",
+        tickvals:sortedMeans.map((d,i)=>i).filter(i=>i%meanTickStep===0),
+        ticktext:sortedMeans.map((d,i)=>i%meanTickStep===0?d.accession:"").filter((d,i)=>i%meanTickStep===0),
+        tickangle:-45
+      },
+      showlegend:false
+    });
 
     const a=accessionMeans(t),b=accessionMeans(t2),bm=new Map(b.map(d=>[d.accession,d.mean]));const x=[],y=[],lab=[];a.forEach(d=>{if(bm.has(d.accession)){x.push(d.mean);y.push(bm.get(d.accession));lab.push(d.accession)}});const r=pearson(x,y);
-    draw("scatterPlot",[{x,y,text:lab,mode:"markers",type:"scatter",hovertemplate:"%{text}<br>x=%{x:.4g}<br>y=%{y:.4g}<extra></extra>"}],{...plotBase(`${t} vs ${t2}${Number.isFinite(r)?` (r = ${r.toFixed(3)})`:""}`,t,t2),showlegend:false});
+    const mx=mean(x),my=mean(y);
+    const xmin=Math.min(...x),xmax=Math.max(...x);
+    const ssx=x.reduce((s,v)=>s+(v-mx)*(v-mx),0);
+    const slope=ssx?x.reduce((s,v,i)=>s+(v-mx)*(y[i]-my),0)/ssx:NaN;
+    const intercept=Number.isFinite(slope)?my-slope*mx:NaN;
+    const regressionX=[xmin,xmax];
+    const regressionY=regressionX.map(v=>Number.isFinite(slope)?intercept+slope*v:NaN);
+    const r2=Number.isFinite(r)?r*r:NaN;
+
+    draw("scatterPlot",[
+      {
+        x,y,text:lab,
+        mode:"markers",
+        type:"scatter",
+        name:"Data points",
+        marker:{size:7},
+        hovertemplate:"%{text}<br>x=%{x:.4g}<br>y=%{y:.4g}<extra></extra>"
+      },
+      {
+        x:regressionX,
+        y:regressionY,
+        mode:"lines",
+        type:"scatter",
+        name:"Regression line",
+        line:{width:2}
+      }
+    ],{
+      ...plotBase(`${t} vs ${t2}${Number.isFinite(r)?` (r = ${r.toFixed(3)})`:""}`,t,t2),
+      showlegend:true,
+      shapes:[
+        {
+          type:"line",
+          x0:mx,x1:mx,
+          y0:Math.min(...y),y1:Math.max(...y),
+          line:{dash:"dash",width:1.5}
+        },
+        {
+          type:"line",
+          x0:Math.min(...x),x1:Math.max(...x),
+          y0:my,y1:my,
+          line:{dash:"dash",width:1.5}
+        }
+      ],
+      annotations:[
+        {
+          x:0.98,y:0.98,
+          xref:"paper",yref:"paper",
+          xanchor:"right",yanchor:"top",
+          text:`r = ${Number.isFinite(r)?r.toFixed(3):"—"}<br>R² = ${Number.isFinite(r2)?r2.toFixed(4):"—"}<br>N = ${x.length}`,
+          showarrow:false,
+          align:"left",
+          borderwidth:1,
+          borderpad:5
+        }
+      ]
+    });
     renderCorrelation(); renderPCA();
   }
 
