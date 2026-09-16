@@ -179,10 +179,239 @@
 
   function h2ForTrait(t){
     if(!replicateKey)return NaN;const by=new Map();rows.forEach(r=>{const a=String(r[accessionKey]).trim(),v=num(r[t]);if(!a||!Number.isFinite(v))return;if(!by.has(a))by.set(a,[]);by.get(a).push(v)});const groups=[...by.values()];if(!groups.length||new Set(groups.map(g=>g.length)).size!==1||groups[0].length<2)return NaN;const r=groups[0].length,k=groups.length,all=groups.flat(),grand=mean(all);const msG=r*groups.reduce((s,g)=>s+(mean(g)-grand)**2,0)/(k-1);const msE=groups.reduce((s,g)=>s+g.reduce((z,v)=>z+(v-mean(g))**2,0),0)/(k*(r-1));return (msG-msE)/(msG+(r-1)*msE)}
-  function renderStats(){const body=$("statsTable tbody");body.innerHTML=traits.map(t=>{const v=rows.map(r=>num(r[t])).filter(Number.isFinite),acc=accessionMeans(t);const h=h2ForTrait(t);return `<tr><td>${esc(t)}</td><td>${v.length}</td><td>${acc.length}</td><td>${fmt(mean(v))}</td><td>${fmt(sd(v))}</td><td>${fmt(sd(v)/mean(v)*100,2)}</td><td>${fmt(Math.min(...v))}</td><td>${fmt(Math.max(...v))}</td><td>${Number.isFinite(h)?fmt(h,3):"—"}</td></tr>`}).join("")}
-  function renderQC(){let out=[];traits.forEach(t=>{const vals=rows.map(r=>num(r[t])).filter(Number.isFinite),m=mean(vals),s=sd(vals);rows.forEach(r=>{const v=num(r[t]);if(Number.isFinite(v)&&s&&Math.abs(v-m)>3*s)out.push([r[accessionKey],replicateKey?r[replicateKey]:"",t,v,`|z| > 3`] )})});$("qcSummary").innerHTML=`<div class="qc-box"><strong>${rows.filter(r=>traits.some(t=>!Number.isFinite(num(r[t])))).length}</strong><span>Rows with at least one missing trait</span></div><div class="qc-box"><strong>${out.length}</strong><span>Potential outlier observations (|z| &gt; 3)</span></div><div class="qc-box"><strong>${replicateKey?"Detected":"Not detected"}</strong><span>Replicate column</span></div>`;$("outlierTable tbody").innerHTML=out.slice(0,500).map(o=>`<tr>${o.map(v=>`<td>${esc(fmt(v))}</td>`).join("")}</tr>`).join("")}
+  function varianceComponents(trait){
+    if(!replicateKey) return {vg:NaN,ve:NaN,h2:NaN,reps:0,complete:0};
 
-  function renderAll(){renderPlots();renderStats();renderQC()}
+    const by=new Map();
+    rows.forEach(r=>{
+      const a=String(r[accessionKey]??"").trim();
+      const rep=String(r[replicateKey]??"").trim();
+      const v=num(r[trait]);
+      if(!a||!rep||!Number.isFinite(v)) return;
+      if(!by.has(a)) by.set(a,new Map());
+      by.get(a).set(rep,v);
+    });
+
+    const groups=[...by.values()];
+    const repCounts=groups.map(g=>g.size);
+    const reps=repCounts.length?Math.max(...repCounts):0;
+    const balanced=groups.length>1 && repCounts.every(n=>n===repCounts[0]) && repCounts[0]>1;
+
+    if(!balanced) return {vg:NaN,ve:NaN,h2:NaN,reps,complete:groups.filter(g=>g.size===reps).length};
+
+    const r=repCounts[0],k=groups.length;
+    const all=[...groups.flatMap(g=>[...g.values()])];
+    const grand=mean(all);
+
+    const msG=r*groups.reduce((sum,g)=>{
+      return sum+(mean([...g.values()])-grand)**2;
+    },0)/(k-1);
+
+    const msE=groups.reduce((sum,g)=>{
+      const vals=[...g.values()],m=mean(vals);
+      return sum+vals.reduce((z,v)=>z+(v-m)**2,0);
+    },0)/(k*(r-1));
+
+    const ve=msE;
+    const vg=Math.max(0,(msG-msE)/r);
+    const h2=(vg+ve)>0?vg/(vg+ve):NaN;
+
+    return {vg,ve,h2,reps:r,complete:k};
+  }
+
+  function renderStats(){
+    const body=$("statsTable tbody");
+
+    const rowsOut=[];
+
+    traits.forEach(t=>{
+      const vals=rows.map(r=>num(r[t])).filter(Number.isFinite);
+      const accessions=[...new Set(
+        rows.map(r=>String(r[accessionKey]??"").trim())
+            .filter((a,i)=>a && Number.isFinite(num(rows[i][t])))
+      )];
+
+      const reps=replicateKey
+        ? [...new Set(rows.map(r=>String(r[replicateKey]??"").trim()).filter(Boolean))]
+        : [];
+
+      const m=mean(vals);
+      const s=sd(vals);
+      const se=vals.length>1?s/Math.sqrt(vals.length):NaN;
+      const cv=Number.isFinite(m)&&m!==0?s/m*100:NaN;
+      const vc=varianceComponents(t);
+
+      const params=[
+        ["Trait",t],
+        ["Number of observations",vals.length],
+        ["Number of accessions",accessions.length],
+        ["Number of replicates",reps.length||"—"],
+        ["Mean",fmt(m)],
+        ["SD",fmt(s)],
+        ["SE",fmt(se)],
+        ["CV%",fmt(cv,2)],
+        ["Minimum",vals.length?fmt(Math.min(...vals)):"—"],
+        ["Maximum",vals.length?fmt(Math.max(...vals)):"—"],
+        ["Genotypic variance",fmt(vc.vg)],
+        ["Residual variance",fmt(vc.ve)],
+        ["H²",Number.isFinite(vc.h2)?fmt(vc.h2,3):"—"]
+      ];
+
+      params.forEach(([parameter,value])=>{
+        rowsOut.push(
+          `<tr><td>${esc(parameter)}</td><td>${esc(value)}</td></tr>`
+        );
+      });
+
+      rowsOut.push(
+        `<tr class="trait-divider"><td colspan="2"><strong>${esc(t)}</strong></td></tr>`
+      );
+    });
+
+    if(rowsOut.length){
+      body.innerHTML=rowsOut.join("");
+    }else{
+      body.innerHTML=`<tr><td colspan="2">No numeric trait data available.</td></tr>`;
+    }
+  }
+
+  function renderQC(){
+    let missingTotal=0;
+
+    const missingByTrait=[];
+    const missingByAccession=new Map();
+    const out=[];
+
+    traits.forEach(t=>{
+      let n=0;
+
+      rows.forEach(r=>{
+        const a=String(r[accessionKey]??"").trim();
+        const v=num(r[t]);
+
+        if(!Number.isFinite(v)){
+          n++;
+          missingTotal++;
+
+          if(a){
+            if(!missingByAccession.has(a)) missingByAccession.set(a,0);
+            missingByAccession.set(a,missingByAccession.get(a)+1);
+          }
+        }
+      });
+
+      missingByTrait.push([t,n]);
+    });
+
+    traits.forEach(t=>{
+      const vals=rows.map(r=>num(r[t])).filter(Number.isFinite);
+      const m=mean(vals);
+      const s=sd(vals);
+
+      if(!Number.isFinite(s)||s===0) return;
+
+      rows.forEach(r=>{
+        const v=num(r[t]);
+        if(Number.isFinite(v)&&Math.abs(v-m)>3*s){
+          out.push([
+            String(r[accessionKey]??""),
+            replicateKey?String(r[replicateKey]??""):"",
+            t,
+            v,
+            "|z| > 3"
+          ]);
+        }
+      });
+    });
+
+    const accessionMissingHTML=[...missingByAccession.entries()]
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,20)
+      .map(([a,n])=>`${esc(a)}: ${n}`)
+      .join("<br>") || "None";
+
+    const traitMissingHTML=missingByTrait
+      .filter(([,n])=>n>0)
+      .map(([t,n])=>`${esc(t)}: ${n}`)
+      .join("<br>") || "None";
+
+    let replicateText="Not detected";
+
+    if(replicateKey){
+      const reps=[...new Set(
+        rows.map(r=>String(r[replicateKey]??"").trim()).filter(Boolean)
+      )];
+
+      const expected=reps.length*new Set(
+        rows.map(r=>String(r[accessionKey]??"").trim()).filter(Boolean)
+      ).size*traits.length;
+
+      const observed=rows.reduce((sum,r)=>{
+        return sum+traits.filter(t=>Number.isFinite(num(r[t]))).length;
+      },0);
+
+      const completeness=expected>0?observed/expected*100:NaN;
+
+      replicateText=`${esc(replicateKey)}: ${reps.length} replicates · ${Number.isFinite(completeness)?completeness.toFixed(1)+"%":"—"} completeness`;
+    }
+
+    $("qcSummary").innerHTML=`
+      <div class="qc-box">
+        <strong>${missingTotal}</strong>
+        <span>Missing observations</span>
+      </div>
+
+      <div class="qc-box">
+        <strong>${out.length}</strong>
+        <span>Potential outliers</span>
+      </div>
+
+      <div class="qc-box">
+        <strong>${replicateKey?"Detected":"Not detected"}</strong>
+        <span>Replicate completeness</span>
+      </div>
+
+      <div class="qc-box">
+        <strong>${missingByAccession.size}</strong>
+        <span>Accessions with missing observations</span>
+      </div>
+
+      <div class="qc-box">
+        <strong>${missingByTrait.filter(([,n])=>n>0).length}</strong>
+        <span>Traits with missing observations</span>
+      </div>
+
+      <div class="qc-box qc-wide">
+        <strong>Missing observations by accession</strong>
+        <span>${accessionMissingHTML}</span>
+      </div>
+
+      <div class="qc-box qc-wide">
+        <strong>Missing observations by trait</strong>
+        <span>${traitMissingHTML}</span>
+      </div>
+
+      <div class="qc-box qc-wide">
+        <strong>Replicate completeness</strong>
+        <span>${replicateText}</span>
+      </div>
+    `;
+
+    $("outlierTable").querySelector("thead").innerHTML=`
+      <tr>
+        <th>Accession</th>
+        <th>Replicate</th>
+        <th>Trait</th>
+        <th>Value</th>
+        <th>Reason</th>
+      </tr>
+    `;
+
+    $("outlierTable tbody").innerHTML=out.slice(0,500).map(o=>
+      `<tr>${o.map(v=>`<td>${esc(fmt(v))}</td>`).join("")}</tr>`
+    ).join("");
+  }
+
   function plotDownload(key){const map={distribution:"distributionPlot",replicates:"replicatePlot",means:"meansPlot",scatter:"scatterPlot",correlation:"correlationPlot",pca:"pcaPlot"};const id=map[key];if(!currentPlots[id])return;Plotly.downloadImage($(id),{format:"svg",filename:`soybean_${key}`,width:1600,height:key==="correlation"||key==="pca"?1000:900,scale:1})}
   document.querySelectorAll("[data-download]").forEach(b=>b.addEventListener("click",()=>plotDownload(b.dataset.download)));
   $("phenotypeFile").addEventListener("change",e=>{if(e.target.files[0])parseWorkbook(e.target.files[0])});

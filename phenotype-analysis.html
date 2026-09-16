@@ -210,27 +210,70 @@ html, body {
     </div>
 
     <div class="plot-grid">
-      <article class="plot-card"><div class="plot-title"><h3>Trait distribution</h3><button data-download="distribution">Download</button></div><div id="distributionPlot" class="plot"></div></article>
-      <article class="plot-card"><div class="plot-title"><h3>Replicate consistency</h3><button data-download="replicates">Download</button></div><div id="replicatePlot" class="plot"></div></article>
-      <article class="plot-card"><div class="plot-title"><h3>Accession means</h3><button data-download="means">Download</button></div><div id="meansPlot" class="plot"></div></article>
-      <article class="plot-card"><div class="plot-title"><h3>Trait relationship</h3><button data-download="scatter">Download</button></div><div id="scatterPlot" class="plot"></div></article>
-      <article class="plot-card plot-wide"><div class="plot-title"><h3>Trait correlation matrix</h3><button data-download="correlation">Download</button></div><div id="correlationPlot" class="plot tall"></div></article>
-      <article class="plot-card plot-wide"><div class="plot-title"><h3>PCA — selected numeric traits</h3><button data-download="pca">Download</button></div><div id="pcaPlot" class="plot tall"></div></article>
+      <article class="plot-card">
+        <div class="plot-title">
+          <h3>Trait distribution</h3>
+          <button data-download="distribution">Download</button>
+        </div>
+        <div id="distributionPlot" class="plot"></div>
+      </article>
+
+      <article class="plot-card plot-wide">
+        <div class="plot-title">
+          <h3>Pearson correlation</h3>
+          <button data-download="correlation">Download</button>
+        </div>
+        <div id="correlationPlot" class="plot tall"></div>
+      </article>
+
+      <article class="plot-card plot-wide">
+        <div class="plot-title">
+          <h3>PCA</h3>
+          <button data-download="pca">Download</button>
+        </div>
+        <div id="pcaPlot" class="plot tall"></div>
+      </article>
     </div>
   </section>
 
   <section id="statsSection" class="atlas-panel" hidden>
-    <div class="eyebrow">03 · QUANTITATIVE GENETICS</div>
-    <h2>Trait statistics &amp; variance components</h2>
-    <div class="table-wrap"><table id="statsTable"><thead><tr><th>Trait</th><th>N</th><th>Accessions</th><th>Mean</th><th>SD</th><th>CV %</th><th>Min</th><th>Max</th><th>H²*</th></tr></thead><tbody></tbody></table></div>
-    <p class="method-note">* H² is estimated from one-way genotype ANOVA for balanced replicated data. It is shown only when the required balanced replicate structure is available; for unbalanced or complex designs, use a dedicated mixed-model analysis.</p>
+    <div class="eyebrow">03 · STATISTICS</div>
+    <h2>Trait statistics</h2>
+    <p class="method-note">For each trait, the table summarizes the observed phenotype distribution, replicate structure, variance components, and broad-sense heritability estimated from replicated observations.</p>
+
+    <div class="table-wrap">
+      <table id="statsTable">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </section>
 
   <section id="qcSection" class="atlas-panel" hidden>
     <div class="eyebrow">04 · QUALITY CONTROL</div>
-    <h2>Potential outliers and replicate quality</h2>
+    <h2>Quality control</h2>
+
     <div id="qcSummary" class="qc-grid"></div>
-    <div class="table-wrap"><table id="outlierTable"><thead><tr><th>Accession</th><th>Replicate</th><th>Trait</th><th>Value</th><th>Reason</th></tr></thead><tbody></tbody></table></div>
+
+    <div class="table-wrap">
+      <table id="outlierTable">
+        <thead>
+          <tr>
+            <th>Accession</th>
+            <th>Replicate</th>
+            <th>Trait</th>
+            <th>Value</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </section>
 
   <section id="exportSection" class="atlas-panel" hidden>
