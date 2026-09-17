@@ -35,6 +35,7 @@
         detectKeys(Object.keys(rows[0]));
         if(!accessionKey||!traits.length) throw Error("Could not identify an accession column and at least one numeric trait.");
         renderOverview(file.name); renderSelectors(); renderAll();
+        initMultiYearAnalysis();
         $("uploadMessage").textContent=`Loaded ${rows.length.toLocaleString()} observations from ${file.name}.`;
       }catch(err){$("uploadMessage").textContent=`Error: ${err.message}`}
     };
@@ -721,4 +722,681 @@
   $("downloadGWAS").addEventListener("click",()=>{const maps=traits.map(t=>[t,accessionMeans(t)]);const acc=[...new Set(rows.map(r=>String(r[accessionKey]).trim()).filter(Boolean))];const byTrait=maps.map(([t,a])=>[t,new Map(a.map(d=>[d.accession,d.mean]))]);const out=[["Taxa",...traits]];acc.forEach(a=>out.push([a,...byTrait.map(([,m])=>Number.isFinite(m.get(a))?m.get(a):"")]));download("soybean_GWAS_ready_phenotype.csv",out.map(r=>r.map(csvEscape).join(",")).join("\n"))});
   $("downloadStats").addEventListener("click",()=>{const lines=[["Trait","N","Accessions","Mean","SD","CV_percent","Min","Max","H2"]];traits.forEach(t=>{const v=rows.map(r=>num(r[t])).filter(Number.isFinite),a=accessionMeans(t),h=h2ForTrait(t);lines.push([t,v.length,a.length,mean(v),sd(v),sd(v)/mean(v)*100,Math.min(...v),Math.max(...v),Number.isFinite(h)?h:""])});download("soybean_trait_statistics.csv",lines.map(r=>r.map(csvEscape).join(",")).join("\n"))});
   $("downloadReport").addEventListener("click",()=>{const lines=["Soybean Genomics Atlas — Phenotype & GWAS Analysis","",`Accession column: ${accessionKey}`,`Replicate column: ${replicateKey||"Not detected"}`,`Observations: ${rows.length}`,`Accessions: ${new Set(rows.map(r=>String(r[accessionKey]).trim()).filter(Boolean)).size}`,`Traits: ${traits.length}`,"","Trait statistics:"];traits.forEach(t=>{const v=rows.map(r=>num(r[t])).filter(Number.isFinite);lines.push(`${t}: N=${v.length}; mean=${fmt(mean(v))}; SD=${fmt(sd(v))}; CV%=${fmt(sd(v)/mean(v)*100,2)}; H2=${fmt(h2ForTrait(t))}`)});download("soybean_phenotype_analysis_report.txt",lines.join("\n"),"text/plain;charset=utf-8")});
+/* ============================================================
+   MULTI-YEAR / MULTI-ENVIRONMENT PHENOTYPE ANALYSIS
+   ============================================================ */
+
+let yearKey = null;
+let yearEnvironmentKeys = [];
+
+function detectYearColumns(headers) {
+  const patterns = [
+    /^year$/i,
+    /year/i,
+    /season/i,
+    /environment/i,
+    /^env$/i,
+    /location/i,
+    /site/i,
+    /trial/i
+  ];
+
+  yearEnvironmentKeys = headers.filter(h =>
+    patterns.some(pattern => pattern.test(String(h)))
+  );
+
+  return yearEnvironmentKeys;
+}
+
+function detectYearColumn(headers) {
+  const candidates = detectYearColumns(headers);
+
+  const preferred = candidates.find(h =>
+    /^year$/i.test(String(h).trim())
+  );
+
+  return preferred || candidates[0] || null;
+}
+
+function multiYearLevels() {
+  if (!yearKey) return [];
+
+  const values = rows
+    .map(r => r[yearKey])
+    .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
+    .map(v => String(v).trim());
+
+  return [...new Set(values)].sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true })
+  );
+}
+
+function multiYearData(trait) {
+  if (!accessionKey || !yearKey || !trait) return [];
+
+  return rows
+    .map(r => ({
+      accession: String(r[accessionKey] ?? '').trim(),
+      year: String(r[yearKey] ?? '').trim(),
+      value: Number(r[trait])
+    }))
+    .filter(d =>
+      d.accession &&
+      d.year &&
+      Number.isFinite(d.value)
+    );
+}
+
+function multiYearBLUP(trait) {
+  const data = multiYearData(trait);
+
+  if (!data.length) return null;
+
+  const years = [...new Set(data.map(d => d.year))];
+
+  const yearMeans = {};
+  years.forEach(y => {
+    const vals = data.filter(d => d.year === y).map(d => d.value);
+    yearMeans[y] = vals.reduce((a,b) => a+b, 0) / vals.length;
+  });
+
+  const adjusted = data.map(d => ({
+    ...d,
+    adjusted: d.value - yearMeans[d.year]
+  }));
+
+  const accessions = [...new Set(adjusted.map(d => d.accession))];
+
+  const accessionStats = accessions.map(acc => {
+    const vals = adjusted
+      .filter(d => d.accession === acc)
+      .map(d => d.adjusted);
+
+    const mean = vals.reduce((a,b) => a+b, 0) / vals.length;
+
+    const rawVals = data
+      .filter(d => d.accession === acc)
+      .map(d => d.value);
+
+    const rawMean =
+      rawVals.reduce((a,b) => a+b, 0) / rawVals.length;
+
+    return {
+      accession: acc,
+      mean,
+      rawMean,
+      n: vals.length
+    };
+  });
+
+  const grand =
+    adjusted.reduce((a,b) => a + b.adjusted, 0) /
+    adjusted.length;
+
+  const genotypeSS = accessionStats.reduce(
+    (s, d) => s + d.n * Math.pow(d.mean - grand, 2),
+    0
+  );
+
+  const vg =
+    accessions.length > 1
+      ? genotypeSS / Math.max(accessions.length - 1, 1)
+      : 0;
+
+  const residuals = adjusted.map(d => {
+    const g = accessionStats.find(
+      x => x.accession === d.accession
+    );
+    return Math.pow(d.adjusted - g.mean, 2);
+  });
+
+  const ve =
+    residuals.reduce((a,b) => a+b, 0) /
+    Math.max(residuals.length - accessions.length, 1);
+
+  const reliability =
+    vg > 0
+      ? vg / (vg + ve / Math.max(years.length, 1))
+      : 0;
+
+  const blups = accessionStats.map(d => {
+    const shrinkage =
+      (reliability * d.n) /
+      (1 + reliability * d.n);
+
+    return {
+      ...d,
+      blup: grand + shrinkage * (d.mean - grand)
+    };
+  });
+
+  const grouped = {};
+  data.forEach(d => {
+    if (!grouped[d.accession]) grouped[d.accession] = {};
+    grouped[d.accession][d.year] = d.value;
+  });
+
+  const gxYear = blups.map(b => {
+    const vals = years
+      .map(y => grouped[b.accession]?.[y])
+      .filter(Number.isFinite);
+
+    const m =
+      vals.length
+        ? vals.reduce((a,b) => a+b, 0) / vals.length
+        : NaN;
+
+    const sd =
+      vals.length > 1
+        ? Math.sqrt(
+            vals.reduce((s,v) => s + Math.pow(v-m,2),0) /
+            (vals.length - 1)
+          )
+        : 0;
+
+    return {
+      ...b,
+      yearsPresent: vals.length,
+      gxYearSD: sd
+    };
+  });
+
+  const allValues = data.map(d => d.value);
+  const overallMean =
+    allValues.reduce((a,b) => a+b,0) /
+    allValues.length;
+
+  const totalVar =
+    allValues.length > 1
+      ? allValues.reduce(
+          (s,v) => s + Math.pow(v-overallMean,2), 0
+        ) / (allValues.length - 1)
+      : 0;
+
+  const gVar = vg;
+  const residualVar = Math.max(ve, 0);
+  const gxVar = Math.max(
+    totalVar - gVar - residualVar,
+    0
+  );
+
+  return {
+    data,
+    years,
+    yearMeans,
+    adjusted,
+    blups: gxYear,
+    vg: gVar,
+    gxVar,
+    ve: residualVar,
+    totalVar,
+    heritability:
+      (gVar + gxVar) > 0
+        ? gVar / (gVar + gxVar + residualVar)
+        : 0
+  };
+}
+
+function pearsonSimple(a, b) {
+  const pairs = [];
+
+  for (let i = 0; i < a.length; i++) {
+    if (Number.isFinite(a[i]) && Number.isFinite(b[i])) {
+      pairs.push([a[i], b[i]]);
+    }
+  }
+
+  if (pairs.length < 2) return NaN;
+
+  const ma =
+    pairs.reduce((s,p) => s+p[0],0) / pairs.length;
+  const mb =
+    pairs.reduce((s,p) => s+p[1],0) / pairs.length;
+
+  let num = 0;
+  let da = 0;
+  let db = 0;
+
+  pairs.forEach(([x,y]) => {
+    num += (x-ma)*(y-mb);
+    da += Math.pow(x-ma,2);
+    db += Math.pow(y-mb,2);
+  });
+
+  return da && db
+    ? num / Math.sqrt(da*db)
+    : NaN;
+}
+
+function renderMultiYearAnalysis() {
+  const traitSelect =
+    document.getElementById('multiYearTraitSelect');
+
+  const yearSelect =
+    document.getElementById('multiYearColumnSelect');
+
+  if (!traitSelect || !yearSelect || !traits.length) return;
+
+  traitSelect.innerHTML = traits
+    .map(t => `<option value="${t}">${t}</option>`)
+    .join('');
+
+  yearSelect.innerHTML = yearKey
+    ? `<option value="${yearKey}">${yearKey}</option>`
+    : '<option>No year column detected</option>';
+
+  if (!yearKey) {
+    document.getElementById('multiYearSection')?.classList.add('hidden');
+    return;
+  }
+
+  document.getElementById('multiYearSection')?.classList.remove('hidden');
+
+  const trait = traitSelect.value;
+
+  if (yearSelect.value) {
+    yearKey = yearSelect.value;
+  }
+
+  const result = multiYearBLUP(trait);
+
+  if (!result) return;
+
+  renderMultiYearBLUP(result);
+  renderMultiYearInteraction(result);
+  renderMultiYearCorrelation(result);
+  renderMultiYearHeatmap(result);
+  renderMultiYearVariance(result);
+  renderMultiYearTable(result);
+}
+
+function renderMultiYearBLUP(result) {
+  const container =
+    document.getElementById('multiYearBlupPlot');
+
+  if (!container) return;
+
+  const top = [...result.blups]
+    .sort((a,b) => b.blup-a.blup)
+    .slice(0, 30)
+    .reverse();
+
+  Plotly.react(
+    container,
+    [{
+      type: 'bar',
+      orientation: 'h',
+      x: top.map(d => d.blup),
+      y: top.map(d => d.accession),
+      hovertemplate:
+        '<b>%{y}</b><br>BLUP: %{x:.4f}<extra></extra>'
+    }],
+    {
+      margin: {l: 100, r: 30, t: 20, b: 50},
+      xaxis: {title: 'BLUP estimate'},
+      yaxis: {title: ''},
+      paper_bgcolor: 'transparent',
+      plot_bgcolor: 'transparent'
+    },
+    {responsive:true, displaylogo:false}
+  );
+}
+
+function renderMultiYearInteraction(result) {
+  const container =
+    document.getElementById('multiYearInteractionPlot');
+
+  if (!container) return;
+
+  const traces = result.years.map(year => {
+    const x = [];
+    const y = [];
+
+    result.data
+      .filter(d => d.year === year)
+      .forEach(d => {
+        x.push(d.accession);
+        y.push(d.value);
+      });
+
+    return {
+      type: 'scatter',
+      mode: 'markers',
+      name: year,
+      x,
+      y
+    };
+  });
+
+  Plotly.react(
+    container,
+    traces,
+    {
+      margin: {l: 60, r: 20, t: 20, b: 100},
+      xaxis: {
+        title: 'Accession',
+        tickangle: -60
+      },
+      yaxis: {title: 'Trait value'},
+      paper_bgcolor: 'transparent',
+      plot_bgcolor: 'transparent'
+    },
+    {responsive:true, displaylogo:false}
+  );
+}
+
+function renderMultiYearCorrelation(result) {
+  const container =
+    document.getElementById('multiYearCorrelationPlot');
+
+  if (!container) return;
+
+  const accessions =
+    [...new Set(result.data.map(d => d.accession))];
+
+  const matrix = result.years.map(y1 =>
+    result.years.map(y2 => {
+      const a = [];
+      const b = [];
+
+      accessions.forEach(acc => {
+        const d1 = result.data.find(
+          d => d.accession === acc && d.year === y1
+        );
+
+        const d2 = result.data.find(
+          d => d.accession === acc && d.year === y2
+        );
+
+        if (d1 && d2) {
+          a.push(d1.value);
+          b.push(d2.value);
+        }
+      });
+
+      return pearsonSimple(a,b);
+    })
+  );
+
+  Plotly.react(
+    container,
+    [{
+      type:'heatmap',
+      z:matrix,
+      x:result.years,
+      y:result.years,
+      zmin:-1,
+      zmax:1,
+      colorscale:'RdBu'
+    }],
+    {
+      margin:{l:70,r:20,t:20,b:60},
+      xaxis:{title:'Year / environment'},
+      yaxis:{title:'Year / environment'},
+      paper_bgcolor:'transparent',
+      plot_bgcolor:'transparent'
+    },
+    {responsive:true,displaylogo:false}
+  );
+}
+
+function renderMultiYearHeatmap(result) {
+  const container =
+    document.getElementById('multiYearHeatmapPlot');
+
+  if (!container) return;
+
+  const top = [...result.blups]
+    .sort((a,b) => b.blup-a.blup)
+    .slice(0, 40);
+
+  const z = top.map(acc =>
+    result.years.map(year => {
+      const d = result.data.find(
+        x =>
+          x.accession === acc.accession &&
+          x.year === year
+      );
+      return d ? d.value : null;
+    })
+  );
+
+  Plotly.react(
+    container,
+    [{
+      type:'heatmap',
+      z,
+      x:result.years,
+      y:top.map(d=>d.accession),
+      colorscale:'Viridis',
+      hoverongaps:false
+    }],
+    {
+      margin:{l:100,r:20,t:20,b:60},
+      xaxis:{title:'Year / environment'},
+      yaxis:{title:'Accession'},
+      paper_bgcolor:'transparent',
+      plot_bgcolor:'transparent'
+    },
+    {responsive:true,displaylogo:false}
+  );
+}
+
+function renderMultiYearVariance(result) {
+  const container =
+    document.getElementById('multiYearVariancePlot');
+
+  if (!container) return;
+
+  Plotly.react(
+    container,
+    [{
+      type:'bar',
+      x:['Genotype','G × Year','Residual'],
+      y:[result.vg,result.gxVar,result.ve]
+    }],
+    {
+      margin:{l:60,r:20,t:20,b:70},
+      yaxis:{title:'Variance'},
+      paper_bgcolor:'transparent',
+      plot_bgcolor:'transparent'
+    },
+    {responsive:true,displaylogo:false}
+  );
+}
+
+function renderMultiYearTable(result) {
+  const tbody =
+    document.querySelector('#multiYearSummaryTable tbody');
+
+  if (!tbody) return;
+
+  tbody.innerHTML = [...result.blups]
+    .sort((a,b) => b.blup-a.blup)
+    .map(d => `
+      <tr>
+        <td>${d.accession}</td>
+        <td>${d.blup.toFixed(4)}</td>
+        <td>${d.rawMean.toFixed(4)}</td>
+        <td>${d.yearsPresent}</td>
+        <td>${d.gxYearSD.toFixed(4)}</td>
+      </tr>
+    `)
+    .join('');
+}
+
+function downloadMultiYearBLUPMatrix() {
+  const trait =
+    document.getElementById('multiYearTraitSelect')?.value;
+
+  const result = multiYearBLUP(trait);
+
+  if (!result) return;
+
+  const matrix = {};
+
+  result.data.forEach(d => {
+    if (!matrix[d.accession])
+      matrix[d.accession] = {};
+
+    matrix[d.accession][d.year] = d.value;
+  });
+
+  const header = [
+    accessionKey,
+    ...result.years,
+    'Overall_BLUP',
+    'Raw_Mean',
+    'GX_Year_SD'
+  ];
+
+  const lines = [header.join(',')];
+
+  result.blups.forEach(d => {
+    const row = [
+      d.accession,
+      ...result.years.map(y =>
+        matrix[d.accession]?.[y] ?? ''
+      ),
+      d.blup,
+      d.rawMean,
+      d.gxYearSD
+    ];
+
+    lines.push(
+      row.map(v =>
+        `"${String(v).replaceAll('"','""')}"`
+      ).join(',')
+    );
+  });
+
+  const blob = new Blob(
+    [lines.join('\n')],
+    {type:'text/csv;charset=utf-8'}
+  );
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download =
+    `multi_year_BLUP_${trait}.csv`;
+  a.click();
+
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadMultiYearReport() {
+  const trait =
+    document.getElementById('multiYearTraitSelect')?.value;
+
+  const result = multiYearBLUP(trait);
+
+  if (!result) return;
+
+  const lines = [
+    'MULTI-YEAR PHENOTYPE ANALYSIS REPORT',
+    '',
+    `Trait: ${trait}`,
+    `Accession column: ${accessionKey}`,
+    `Year/environment column: ${yearKey}`,
+    `Years/environments: ${result.years.join(', ')}`,
+    '',
+    `Genotype variance: ${result.vg}`,
+    `G × Year variance: ${result.gxVar}`,
+    `Residual variance: ${result.ve}`,
+    `Total variance: ${result.totalVar}`,
+    `Genotype proportion: ${result.heritability}`,
+    '',
+    'Method:',
+    'Year-effect adjustment followed by empirical shrinkage to generate BLUP-style genotype estimates.',
+    'For complex unbalanced, spatial, or formal REML analyses, confirm results using a dedicated mixed-model package.',
+    '',
+    'ACCESSION,BLUP,RAW_MEAN,YEARS_PRESENT,GX_YEAR_SD'
+  ];
+
+  result.blups
+    .sort((a,b)=>b.blup-a.blup)
+    .forEach(d => {
+      lines.push([
+        d.accession,
+        d.blup,
+        d.rawMean,
+        d.yearsPresent,
+        d.gxYearSD
+      ].join(','));
+    });
+
+  const blob = new Blob(
+    [lines.join('\n')],
+    {type:'text/plain;charset=utf-8'}
+  );
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download =
+    `multi_year_report_${trait}.txt`;
+  a.click();
+
+  URL.revokeObjectURL(a.href);
+}
+
+function initMultiYearAnalysis() {
+  if (typeof rows === 'undefined' || !rows.length) return;
+
+  const headers = Object.keys(rows[0]);
+
+  yearKey = detectYearColumn(headers);
+
+  const traitSelect =
+    document.getElementById('multiYearTraitSelect');
+
+  const yearSelect =
+    document.getElementById('multiYearColumnSelect');
+
+  if (!traitSelect || !yearSelect) return;
+
+  traitSelect.innerHTML = traits
+    .map(t =>
+      `<option value="${esc(t)}">${esc(t)}</option>`
+    )
+    .join('');
+
+  yearSelect.innerHTML = yearEnvironmentKeys.length
+    ? yearEnvironmentKeys
+        .map(h =>
+          `<option value="${esc(h)}">${esc(h)}</option>`
+        )
+        .join('')
+    : '<option value="">No year/environment column detected</option>';
+
+  if (yearKey && yearEnvironmentKeys.includes(yearKey)) {
+    yearSelect.value = yearKey;
+  }
+
+  traitSelect.addEventListener(
+    'change',
+    renderMultiYearAnalysis
+  );
+
+  yearSelect.addEventListener(
+    'change',
+    renderMultiYearAnalysis
+  );
+
+  document
+    .getElementById('downloadMultiYearBLUP')
+    ?.addEventListener(
+      'click',
+      downloadMultiYearBLUPMatrix
+    );
+
+  document
+    .getElementById('downloadMultiYearReport')
+    ?.addEventListener(
+      'click',
+      downloadMultiYearReport
+    );
+
+  renderMultiYearAnalysis();
+}
+
 })();
