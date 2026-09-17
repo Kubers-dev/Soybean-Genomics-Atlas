@@ -77,32 +77,58 @@
     if(repNames.length>=2){const a=new Map(groups.get(repNames[0])),b=new Map(groups.get(repNames[1]));const x=[],y=[];for(const [acc,v] of a){if(b.has(acc)){x.push(v);y.push(b.get(acc))}}draw("replicatePlot",[{x,y,mode:"markers",type:"scatter",text:x.map((_,i)=>i+1),hovertemplate:"x=%{x}<br>y=%{y}<extra></extra>"}],plotBase(`${t}: replicate 1 vs replicate 2`,repNames[0],repNames[1]));$("replicatePlot").on("plotly_afterplot",()=>{});}
     else draw("replicatePlot",[],plotBase("Replicate analysis","Replicate","Value"));
 
-    const am=accessionMeans(t).sort((a,b)=>b.mean-a.mean);const top=am.slice(0,Math.min(100,am.length));
-    const sortedMeans=top.slice().sort((a,b)=>a.mean-b.mean);
-    const meanTickStep=Math.max(1,Math.ceil(sortedMeans.length/18));
-    draw("meansPlot",[{
-      x:sortedMeans.map((d,i)=>i),
-      y:sortedMeans.map(d=>d.mean),
-      text:sortedMeans.map(d=>d.accession),
-      customdata:sortedMeans.map(d=>[d.accession,d.sd]),
+    /*
+     * One-year BLUP:
+     * Random-genotype model for replicated observations.
+     *
+     * BLUP_i = grand_mean + shrinkage * (genotype_mean_i - grand_mean)
+     *
+     * shrinkage = Vg / (Vg + Ve / r)
+     *
+     * This is appropriate for replicated one-year data and shrinks
+     * accession estimates toward the population mean according to
+     * the estimated genetic and residual variance.
+     */
+    const blups = blupForTrait(t);
+    const sortedBLUPs = blups
+      .slice()
+      .sort((a,b)=>b.blup-a.blup)
+      .slice(0,Math.min(100,blups.length))
+      .sort((a,b)=>a.blup-b.blup);
+
+    const blupTickStep = Math.max(1,Math.ceil(sortedBLUPs.length/18));
+
+    draw("blupPlot",[{
+      x:sortedBLUPs.map((d,i)=>i),
+      y:sortedBLUPs.map(d=>d.blup),
+      text:sortedBLUPs.map(d=>d.accession),
+      customdata:sortedBLUPs.map(d=>[
+        d.accession,
+        d.mean,
+        d.blup,
+        d.shrinkage,
+        d.n
+      ]),
       mode:"markers",
       type:"scatter",
-      marker:{size:7},
-      error_y:{
-        type:"data",
-        array:sortedMeans.map(d=>Number.isFinite(d.sd)?d.sd:0),
-        visible:true,
-        thickness:1.2,
-        width:4
-      },
-      hovertemplate:"%{customdata[0]}<br>Mean = %{y:.4g}<br>SD = %{customdata[1]:.4g}<extra></extra>"
+      marker:{size:8},
+      hovertemplate:
+        "<b>%{customdata[0]}</b><br>" +
+        "BLUP = %{customdata[2]:.4g}<br>" +
+        "Raw mean = %{customdata[1]:.4g}<br>" +
+        "Shrinkage = %{customdata[3]:.3f}<br>" +
+        "Observations = %{customdata[4]}<extra></extra>"
     }],{
-      ...plotBase(`${t}: accession means (± SD)`,"Accession","Mean ± SD"),
+      ...plotBase(`${t}: one-year BLUP estimates`,"Accession","BLUP"),
       xaxis:{
-        title:"Accessions (sorted by mean)",
+        title:"Accessions (sorted by BLUP)",
         tickmode:"array",
-        tickvals:sortedMeans.map((d,i)=>i).filter(i=>i%meanTickStep===0),
-        ticktext:sortedMeans.map((d,i)=>i%meanTickStep===0?d.accession:"").filter((d,i)=>i%meanTickStep===0),
+        tickvals:sortedBLUPs
+          .map((d,i)=>i)
+          .filter(i=>i%blupTickStep===0),
+        ticktext:sortedBLUPs
+          .map((d,i)=>i%blupTickStep===0?d.accession:"")
+          .filter((d,i)=>i%blupTickStep===0),
         tickangle:-45
       },
       showlegend:false
@@ -175,6 +201,70 @@
   function renderPCA(){
     const complete=[];rows.forEach(r=>{const v=traits.map(t=>num(r[t]));if(v.every(Number.isFinite))complete.push(v)});if(complete.length<3||traits.length<2){draw("pcaPlot",[],plotBase("PCA","PC1","PC2"));return}
     const means=traits.map((_,j)=>mean(complete.map(r=>r[j]))),sds=traits.map((_,j)=>sd(complete.map(r=>r[j])));const X=complete.map(r=>r.map((v,j)=>(v-means[j])/(sds[j]||1)));const C=covarianceMatrix(X);const eig=jacobi(C);const total=eig.values.reduce((s,v)=>s+Math.max(0,v),0);const scores=X.map(r=>[r.reduce((s,v,j)=>s+v*eig.vectors[0][j],0),r.reduce((s,v,j)=>s+v*eig.vectors[1][j],0)]);draw("pcaPlot",[{x:scores.map(v=>v[0]),y:scores.map(v=>v[1]),mode:"markers",type:"scatter",hovertemplate:"PC1=%{x:.3f}<br>PC2=%{y:.3f}<extra></extra>"}],{...plotBase(`PCA (PC1 ${(eig.values[0]/total*100).toFixed(1)}% · PC2 ${(eig.values[1]/total*100).toFixed(1)}%)`,`PC1`,`PC2`)});
+  }
+
+  function blupForTrait(trait){
+    if(!replicateKey) return [];
+
+    const by = new Map();
+
+    rows.forEach(r=>{
+      const accession = String(r[accessionKey]??"").trim();
+      const rep = String(r[replicateKey]??"").trim();
+      const value = num(r[trait]);
+
+      if(!accession || !rep || !Number.isFinite(value)) return;
+
+      if(!by.has(accession)) by.set(accession,[]);
+      by.get(accession).push(value);
+    });
+
+    const groups = [...by.entries()]
+      .filter(([,values])=>values.length>0);
+
+    if(!groups.length) return [];
+
+    /*
+     * Estimate variance components when replicated data are balanced.
+     * For incomplete/unbalanced data, use the average replicate count
+     * as the effective replication number and retain the same
+     * random-genotype shrinkage framework.
+     */
+    const all = groups.flatMap(([,values])=>values);
+    const grand = mean(all);
+
+    const vc = varianceComponents(trait);
+
+    let vg = vc.vg;
+    let ve = vc.ve;
+
+    if(!Number.isFinite(vg) || vg < 0) vg = 0;
+    if(!Number.isFinite(ve) || ve < 0) ve = 0;
+
+    const meanReplications =
+      groups.reduce((s,[,values])=>s+values.length,0) / groups.length;
+
+    const rEff = Math.max(1,meanReplications);
+
+    const denominator = vg + ve/rEff;
+    const shrinkage =
+      denominator > 0 ? vg/denominator : 1;
+
+    return groups.map(([accession,values])=>{
+      const m = mean(values);
+      const blup =
+        Number.isFinite(m) && Number.isFinite(grand)
+          ? grand + shrinkage*(m-grand)
+          : NaN;
+
+      return {
+        accession,
+        mean:m,
+        blup,
+        shrinkage,
+        n:values.length
+      };
+    }).filter(d=>Number.isFinite(d.blup));
   }
 
   function h2ForTrait(t){
@@ -625,7 +715,7 @@
 
   window.addEventListener("resize", resizeAnalysisPlots);
 
-  function plotDownload(key){const map={distribution:"distributionPlot",replicates:"replicatePlot",means:"meansPlot",scatter:"scatterPlot",correlation:"correlationPlot",pca:"pcaPlot",statsMean:"statsMeanPlot",statsCV:"statsCVPlot",statsH2:"statsH2Plot",qcReplicate:"qcReplicatePlot",qcOutliers:"qcOutlierPlot",qcCV:"qcCVPlot"};const id=map[key];if(!currentPlots[id])return;Plotly.downloadImage($(id),{format:"svg",filename:`soybean_${key}`,width:1600,height:key==="correlation"||key==="pca"?1000:900,scale:1})}
+  function plotDownload(key){const map={distribution:"distributionPlot",replicates:"replicatePlot",blup:"blupPlot",scatter:"scatterPlot",correlation:"correlationPlot",pca:"pcaPlot",statsMean:"statsMeanPlot",statsCV:"statsCVPlot",statsH2:"statsH2Plot",qcReplicate:"qcReplicatePlot",qcOutliers:"qcOutlierPlot",qcCV:"qcCVPlot"};const id=map[key];if(!currentPlots[id])return;Plotly.downloadImage($(id),{format:"svg",filename:`soybean_${key}`,width:1600,height:key==="correlation"||key==="pca"?1000:900,scale:1})}
   document.querySelectorAll("[data-download]").forEach(b=>b.addEventListener("click",()=>plotDownload(b.dataset.download)));
   $("phenotypeFile").addEventListener("change",e=>{if(e.target.files[0])parseWorkbook(e.target.files[0])});
   $("downloadGWAS").addEventListener("click",()=>{const maps=traits.map(t=>[t,accessionMeans(t)]);const acc=[...new Set(rows.map(r=>String(r[accessionKey]).trim()).filter(Boolean))];const byTrait=maps.map(([t,a])=>[t,new Map(a.map(d=>[d.accession,d.mean]))]);const out=[["Taxa",...traits]];acc.forEach(a=>out.push([a,...byTrait.map(([,m])=>Number.isFinite(m.get(a))?m.get(a):"")]));download("soybean_GWAS_ready_phenotype.csv",out.map(r=>r.map(csvEscape).join(",")).join("\n"))});
