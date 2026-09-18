@@ -129,6 +129,46 @@ html, body {
 }
 </style>
 
+
+<style id="multi-year-plot-fix">
+.multi-year-section .plot-grid.multi-year-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+.multi-year-section .plot-card {
+  min-width: 0;
+  width: 100%;
+}
+
+.multi-year-section .plot-card.plot-wide {
+  grid-column: 1 / -1;
+}
+
+.multi-year-section .plot-container {
+  width: 100%;
+  height: 440px;
+  min-height: 440px;
+}
+
+.multi-year-section .plot-wide .plot-container {
+  height: 520px;
+  min-height: 520px;
+}
+
+@media (max-width: 900px) {
+  .multi-year-section .plot-grid.multi-year-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .multi-year-section .plot-card.plot-wide {
+    grid-column: auto;
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -188,36 +228,42 @@ html, body {
     </div>
   </section>
 
-  <section id="multiYearUploadSection" class="atlas-panel">
+  <section id="traitMultiYearUploadSection" class="atlas-panel">
     <div class="section-heading">
       <div>
         <div class="eyebrow">MULTI-YEAR / MULTI-ENVIRONMENT DATASET</div>
-        <h2>Upload independent multi-year phenotype data</h2>
+        <h2>Trait-centered multi-year phenotype analysis</h2>
         <p>
-          Upload a separate dataset containing repeated measurements for the
-          same accessions across years or environments. This upload does not
-          replace the one-year phenotype dataset.
+          Upload a separate multi-year phenotype dataset containing repeated
+          measurements for the same accessions across years or environments.
+          The one-year phenotype analysis remains independent and unchanged.
         </p>
       </div>
     </div>
 
     <div class="upload-card">
-      <label class="upload-label" for="multiYearFile">
+      <label class="upload-label" for="traitMultiYearFile">
         Upload Multi-Year / Multi-Environment CSV or Excel Data
       </label>
-      <input id="multiYearFile" type="file" accept=".csv,.tsv,.txt,.xlsx,.xls">
+
+      <input
+        id="traitMultiYearFile"
+        type="file"
+        accept=".csv,.tsv,.txt,.xlsx,.xls"
+      >
+
       <div class="upload-hint">
         Recommended columns:
         <b>Accession</b>,
         <b>Year</b> or <b>Environment</b>,
         <b>Replicate</b>,
-        followed by numeric traits.
+        followed by numeric phenotype traits.
       </div>
-      <div id="multiYearUploadMessage" class="status-message"></div>
+
+      <div id="tmUploadMessage" class="status-message"></div>
     </div>
 
-    <div id="multiYearSummaryCards" class="metric-grid"></div>
-    <div id="multiYearWarnings" class="notice-stack"></div>
+    <div id="tmSummary" class="metric-grid"></div>
   </section>
 
   <section id="overviewSection" class="atlas-panel" hidden>
@@ -342,48 +388,94 @@ html, body {
   </section>
 
 
-<!-- MULTI_YEAR_ANALYSIS_INSERT -->
-<section class="analysis-section multi-year-section" id="multiYearSection" hidden>
+<section class="analysis-section multi-year-section" id="traitMultiYearSection" hidden>
+
   <div class="section-heading">
     <div>
-      <span class="section-eyebrow">04 · MULTI-YEAR / MULTI-ENVIRONMENT ANALYSIS</span>
-      <h2>Multi-year genotype performance</h2>
+      <span class="section-eyebrow">
+        04 · TRAIT-CENTERED MULTI-YEAR ANALYSIS
+      </span>
+
+      <h2>Multi-year trait performance</h2>
+
       <p>
-        Evaluate genotype performance across years or environments using
-        year-adjusted empirical BLUP estimates, genotype × year interaction,
-        stability, and variance components.
+        Select a phenotype trait to evaluate its mean performance,
+        distribution across years, genotype × year response, year-to-year
+        correlation, variance components, genotype BLUP-style effects,
+        and broad-sense heritability.
       </p>
     </div>
   </div>
 
   <div class="control-grid">
+
     <div class="control-group">
-      <label for="multiYearTraitSelect">Trait</label>
-      <select id="multiYearTraitSelect"></select>
+      <label for="tmTraitSelect">Select trait</label>
+      <select id="tmTraitSelect"></select>
     </div>
 
     <div class="control-group">
-      <label for="multiYearColumnSelect">Year / Environment</label>
-      <select id="multiYearColumnSelect"></select>
+      <label for="tmYearSelect">Year / Environment</label>
+      <select id="tmYearSelect"></select>
     </div>
+
   </div>
+
+<div id="tmExcelExportBar"
+     style="display:block!important; margin:24px 0; padding:20px;
+            background:#f4f7f9; border:2px solid #607d8b;
+            border-radius:10px; width:100%; box-sizing:border-box;">
+  <div style="font-size:20px; font-weight:700; margin-bottom:8px;">
+    Multi-Year Excel Results
+  </div>
+  <div style="font-size:14px; margin-bottom:14px;">
+    Download the calculated multi-year analysis results as an Excel workbook.
+    Each analysis is provided on a separate worksheet.
+  </div>
+  <button id="tmDownloadExcel"
+          type="button"
+          style="display:inline-block!important;
+                 padding:12px 22px;
+                 font-size:16px;
+                 font-weight:600;
+                 cursor:pointer;
+                 border:1px solid #333;
+                 border-radius:6px;
+                 background:#ffffff;">
+    Download Multi-Year Results (.xlsx)
+  </button>
+  <span id="tmExcelStatus" style="margin-left:15px;font-size:14px;"></span>
+</div>
+
+<div id="tmTraitInfo" class="method-note"></div>
 
   <div class="plot-grid multi-year-grid">
 
     <div class="plot-card">
       <div class="plot-card-header">
-        <h3>Multi-year BLUP estimates</h3>
-        <span>Overall genotype performance</span>
+        <h3>Trait mean across years</h3>
+        <span>Mean ± SD</span>
       </div>
-      <div id="multiYearBlupPlot" class="plot-container"></div>
+      <div id="tmMeanPlot" class="plot-container"></div>
     </div>
 
     <div class="plot-card">
       <div class="plot-card-header">
-        <h3>Genotype × year interaction</h3>
-        <span>Performance consistency across years</span>
+        <h3>Trait distribution across years</h3>
+        <span>Year-specific phenotype distribution</span>
       </div>
-      <div id="multiYearInteractionPlot" class="plot-container"></div>
+      <div id="tmDistributionPlot" class="plot-container"></div>
+    </div>
+
+    <div class="plot-card plot-wide">
+      <div class="plot-card-header">
+        <h3>Genotype × year response</h3>
+        <span>
+          Accessions ranked by overall trait performance; accession IDs
+          available on hover
+        </span>
+      </div>
+      <div id="tmInteractionPlot" class="plot-container"></div>
     </div>
 
     <div class="plot-card">
@@ -391,100 +483,64 @@ html, body {
         <h3>Year-to-year correlation</h3>
         <span>Correlation of accession means</span>
       </div>
-      <div id="multiYearCorrelationPlot" class="plot-container"></div>
+      <div id="tmCorrelationPlot" class="plot-container"></div>
     </div>
 
     <div class="plot-card">
       <div class="plot-card-header">
-        <h3>Accession × year heatmap</h3>
-        <span>Year-specific genotype performance</span>
+        <h3>Variance components</h3>
+        <span>Genotype, G × Year, and residual variation</span>
       </div>
-      <div id="multiYearHeatmapPlot" class="plot-container"></div>
+      <div id="tmVariancePlot" class="plot-container"></div>
     </div>
 
     <div class="plot-card">
       <div class="plot-card-header">
-        <h3>Multi-year variance components</h3>
-        <span>Genotype, G×Year, and residual variation</span>
+        <h3>Genotype BLUP distribution</h3>
+        <span>Empirical shrinkage estimates</span>
       </div>
-      <div id="multiYearVariancePlot" class="plot-container"></div>
+      <div id="tmBlupPlot" class="plot-container"></div>
     </div>
 
-    <div class="plot-card">
+    <div class="plot-card plot-wide">
       <div class="plot-card-header">
-        <h3>Multi-year broad-sense heritability</h3>
-        <span>Entry-mean H² across years / environments</span>
+        <h3>Trait-level overview</h3>
+        <span>Overall means and broad-sense heritability</span>
       </div>
-      <div id="multiYearHeritabilityPlot" class="plot-container"></div>
+      <div id="tmTraitSummaryPlot" class="plot-container"></div>
     </div>
 
   </div>
 
   <div class="table-card">
     <div class="plot-card-header">
-      <h3>Multi-year genotype summary</h3>
-      <span>Empirical BLUP-style estimates</span>
+      <h3>Statistical framework</h3>
+      <span>Trait-centered multi-year analysis</span>
     </div>
 
-    <div class="table-wrap">
-      <table id="multiYearSummaryTable">
-        <thead>
-          <tr>
-            <th>Accession</th>
-            <th>Overall BLUP</th>
-            <th>Mean</th>
-            <th>Years</th>
-            <th>G×Year SD</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+    <p class="method-note">
+      Genotype performance is evaluated separately for each trait.
+      Genotype × year variance components are estimated using a balanced
+      genotype × year × replicate ANOVA framework when supported by the
+      dataset. Broad-sense heritability is calculated from genotype,
+      genotype × year, and residual variance components.
+    </p>
+
+    <p class="method-note">
+      The genotype × year visualization uses accession rank instead of
+      accession names on the axis to prevent label overlap in datasets
+      containing hundreds of accessions. Accession identifiers remain
+      available through interactive hover information.
+    </p>
+
+    <p class="method-note">
+      BLUP-style values use year-level genotype means with empirical
+      shrinkage. For unbalanced designs, spatial models, or complex
+      random-effect structures, formal REML should be used for
+      publication-grade variance-component estimation.
+    </p>
   </div>
 
-  <div class="table-card">
-    <div class="plot-card-header">
-      <h3>Variance components and heritability</h3>
-      <span>Balanced multi-environment design</span>
-    </div>
-
-    <div class="table-wrap">
-      <table id="multiYearVarianceTable">
-        <thead>
-          <tr>
-            <th>Parameter</th>
-            <th>Value</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <div id="multiYearH2Status" class="notice-stack"></div>
-  </div>
-
-  <div class="export-row">
-    <button id="downloadMultiYearBLUP" class="secondary-button">
-      Download multi-year BLUP matrix
-    </button>
-
-    <button id="downloadMultiYearReport" class="secondary-button">
-      Download multi-year report
-    </button>
-  </div>
-
-  <div class="method-note">
-    <strong>Method note:</strong>
-    The browser implementation performs year/environment-effect adjustment
-    followed by empirical shrinkage to generate BLUP-style genotype estimates.
-    For balanced genotype × environment × replicate data, broad-sense
-    entry-mean heritability is estimated as
-    H² = σ²G / [σ²G + σ²G×E/E + σ²e/(E×R)].
-    These browser estimates are intended for exploratory phenotype analysis.
-    For unbalanced designs, spatial effects, multiple random-effect structures,
-    or formal REML inference, confirm the results using dedicated mixed-model
-    software such as ASReml, sommer, lme4, or equivalent.
-  </div>
 </section>
 
 <section id="qcSection" class="atlas-panel" hidden>
@@ -549,5 +605,149 @@ html, body {
   </section>
 </main>
 <script src="js/phenotype-analysis.js?v=6819c64"></script>
+<script src="js/multi-year-trait-analysis.js?v=2"></script>
+
+<script>
+(function () {
+  function graphRows(id) {
+    const el = document.getElementById(id);
+    if (!el || !el.data) return [];
+
+    const rows = [];
+
+    el.data.forEach((trace, ti) => {
+      const n = Math.max(
+        Array.isArray(trace.x) ? trace.x.length : 0,
+        Array.isArray(trace.y) ? trace.y.length : 0,
+        Array.isArray(trace.z) ? trace.z.length : 0,
+        Array.isArray(trace.customdata) ? trace.customdata.length : 0
+      );
+
+      for (let i = 0; i < n; i++) {
+        const row = {
+          Trace: trace.name || ('Trace ' + (ti + 1))
+        };
+
+        if (Array.isArray(trace.x)) row.X = trace.x[i];
+        if (Array.isArray(trace.y)) row.Y = trace.y[i];
+        if (Array.isArray(trace.z)) row.Z = trace.z[i];
+
+        if (Array.isArray(trace.customdata)) {
+          const cd = trace.customdata[i];
+          if (Array.isArray(cd)) {
+            cd.forEach((v, j) => row['CustomData_' + (j + 1)] = v);
+          } else {
+            row.CustomData = cd;
+          }
+        }
+
+        if (trace.text && Array.isArray(trace.text)) {
+          row.Text = trace.text[i];
+        }
+
+        if (trace.hovertext && Array.isArray(trace.hovertext)) {
+          row.HoverText = trace.hovertext[i];
+        }
+
+        rows.push(row);
+      }
+    });
+
+    return rows;
+  }
+
+  function safeSheetName(name) {
+    return name.replace(/[\\\/\?\*\[\]\:]/g, '_').substring(0, 31);
+  }
+
+  function addSheet(wb, name, rows) {
+    if (!rows || !rows.length) {
+      rows = [{ Message: 'No plotted data available for this analysis.' }];
+    }
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, safeSheetName(name));
+  }
+
+  function downloadMultiYearExcel() {
+    const status = document.getElementById('tmExcelStatus');
+
+    try {
+      if (typeof XLSX === 'undefined') {
+        throw new Error('Excel library is not loaded.');
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      addSheet(wb, 'Trait Means',
+        graphRows('tmMeanPlot'));
+
+      addSheet(wb, 'Distributions',
+        graphRows('tmDistributionPlot'));
+
+      addSheet(wb, 'Genotype Year',
+        graphRows('tmInteractionPlot'));
+
+      addSheet(wb, 'Year Correlation',
+        graphRows('tmCorrelationPlot'));
+
+      addSheet(wb, 'Variance Components',
+        graphRows('tmVariancePlot'));
+
+      addSheet(wb, 'BLUP Distribution',
+        graphRows('tmBlupPlot'));
+
+      addSheet(wb, 'Trait Summary',
+        graphRows('tmTraitSummaryPlot'));
+
+      // Add an analysis-information sheet
+      const traitSelect = document.getElementById('tmTraitSelect');
+      const yearSelect = document.getElementById('tmYearSelect');
+
+      const info = [
+        {
+          Item: 'Selected trait',
+          Value: traitSelect ? traitSelect.value : ''
+        },
+        {
+          Item: 'Selected year',
+          Value: yearSelect ? yearSelect.value : ''
+        },
+        {
+          Item: 'Generated',
+          Value: new Date().toLocaleString()
+        }
+      ];
+
+      addSheet(wb, 'Analysis Info', info);
+
+      XLSX.writeFile(
+        wb,
+        'soybean_multi_year_analysis_results.xlsx'
+      );
+
+      if (status) {
+        status.textContent = 'Excel file downloaded.';
+      }
+
+    } catch (err) {
+      console.error(err);
+      if (status) {
+        status.textContent = 'Excel export error: ' + err.message;
+      }
+      alert('Excel export failed: ' + err.message);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const button = document.getElementById('tmDownloadExcel');
+
+    if (button) {
+      button.addEventListener('click', downloadMultiYearExcel);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
