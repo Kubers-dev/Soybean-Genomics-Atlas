@@ -783,6 +783,23 @@
     setTimeout(() => URL.revokeObjectURL(a.href),500);
   }
 
+  /* Use the same Plotly configuration as the working one-year analysis. */
+  function multiDraw(id,data,layout) {
+    const el = $m(id);
+    if(!el || typeof Plotly === "undefined") return;
+
+    multiCurrentPlots[id] = true;
+
+    Plotly.newPlot(
+      el,
+      data,
+      layout,
+      typeof PLOT_CONFIG !== "undefined"
+        ? PLOT_CONFIG
+        : {responsive:true,displaylogo:false}
+    );
+  }
+
   function detectMultiKeys(headers) {
     const low = headers.map(h => String(h).toLowerCase().trim());
 
@@ -881,8 +898,17 @@
           );
         }
 
+        /* Render the independent multi-year analysis immediately
+           after the multi-year file has been successfully parsed. */
         renderMultiYearOverview(file.name);
         initializeMultiYearSelectors();
+
+        const multiSection = $m("multiYearSection");
+        if (multiSection) {
+          multiSection.removeAttribute("hidden");
+          multiSection.style.display = "";
+        }
+
         renderMultiYearAnalysis();
 
         const msg = $m("multiYearUploadMessage");
@@ -1500,8 +1526,8 @@
 
     multiCurrentPlots.multiYearBlupPlot = true;
 
-    Plotly.react(
-      container,
+    multiDraw(
+      "multiYearBlupPlot",
       [{
         type:"bar",
         orientation:"h",
@@ -1551,8 +1577,8 @@
 
     multiCurrentPlots.multiYearInteractionPlot = true;
 
-    Plotly.react(
-      container,
+    multiDraw(
+      "multiYearInteractionPlot",
       traces,
       {
         margin:{l:60,r:20,t:30,b:110},
@@ -1602,8 +1628,8 @@
 
     multiCurrentPlots.multiYearCorrelationPlot = true;
 
-    Plotly.react(
-      container,
+    multiDraw(
+      "multiYearCorrelationPlot",
       [{
         type:"heatmap",
         z:matrix,
@@ -1656,8 +1682,8 @@
 
     multiCurrentPlots.multiYearHeatmapPlot = true;
 
-    Plotly.react(
-      container,
+    multiDraw(
+      "multiYearHeatmapPlot",
       [{
         type:"heatmap",
         z,
@@ -1685,8 +1711,8 @@
 
     multiCurrentPlots.multiYearVariancePlot = true;
 
-    Plotly.react(
-      container,
+    multiDraw(
+      "multiYearVariancePlot",
       [{
         type:"bar",
         x:[
@@ -1720,8 +1746,8 @@
 
     multiCurrentPlots.multiYearHeritabilityPlot = true;
 
-    Plotly.react(
-      container,
+    multiDraw(
+      "multiYearHeritabilityPlot",
       [{
         type:"bar",
         x:["Entry-mean H²"],
