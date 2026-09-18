@@ -77,3 +77,17 @@
     min-height: 320px;
   }
 }
+
+/* Multi-year analysis must become visible after a dataset is uploaded. */
+.multi-year-section:not([hidden]) {
+  display: block !important;
+}
+
+.multi-year-section .plot-container {
+  width: 100%;
+  min-height: 420px;
+}
+
+.multi-year-section .plot-container > div {
+  width: 100%;
+}
