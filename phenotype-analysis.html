@@ -180,11 +180,44 @@ html, body {
       <p>Upload replicated soybean phenotype data, perform quality control and quantitative-genetic analyses, visualize traits, and export manuscript-ready figures and GWAS-ready phenotype matrices.</p>
     </div>
     <div class="upload-card">
-      <label class="upload-label" for="phenotypeFile">Upload CSV or Excel phenotype data</label>
+      <div class="eyebrow">ONE-YEAR DATASET</div>
+      <label class="upload-label" for="phenotypeFile">Upload One-Year Phenotype Data</label>
       <input id="phenotypeFile" type="file" accept=".csv,.tsv,.txt,.xlsx,.xls">
-      <div class="upload-hint">Recommended columns: <b>Accession</b>, <b>Replicate</b>, followed by numeric traits.</div>
+      <div class="upload-hint">Recommended columns: <b>Accession</b>, <b>Replicate</b>, followed by numeric traits. This dataset is used only for the one-year analysis.</div>
       <div id="uploadMessage" class="status-message"></div>
     </div>
+  </section>
+
+  <section id="multiYearUploadSection" class="atlas-panel">
+    <div class="section-heading">
+      <div>
+        <div class="eyebrow">MULTI-YEAR / MULTI-ENVIRONMENT DATASET</div>
+        <h2>Upload independent multi-year phenotype data</h2>
+        <p>
+          Upload a separate dataset containing repeated measurements for the
+          same accessions across years or environments. This upload does not
+          replace the one-year phenotype dataset.
+        </p>
+      </div>
+    </div>
+
+    <div class="upload-card">
+      <label class="upload-label" for="multiYearFile">
+        Upload Multi-Year / Multi-Environment CSV or Excel Data
+      </label>
+      <input id="multiYearFile" type="file" accept=".csv,.tsv,.txt,.xlsx,.xls">
+      <div class="upload-hint">
+        Recommended columns:
+        <b>Accession</b>,
+        <b>Year</b> or <b>Environment</b>,
+        <b>Replicate</b>,
+        followed by numeric traits.
+      </div>
+      <div id="multiYearUploadMessage" class="status-message"></div>
+    </div>
+
+    <div id="multiYearSummaryCards" class="metric-grid"></div>
+    <div id="multiYearWarnings" class="notice-stack"></div>
   </section>
 
   <section id="overviewSection" class="atlas-panel" hidden>
@@ -310,7 +343,7 @@ html, body {
 
 
 <!-- MULTI_YEAR_ANALYSIS_INSERT -->
-<section class="analysis-section multi-year-section" id="multiYearSection">
+<section class="analysis-section multi-year-section" id="multiYearSection" hidden>
   <div class="section-heading">
     <div>
       <span class="section-eyebrow">04 · MULTI-YEAR / MULTI-ENVIRONMENT ANALYSIS</span>
@@ -377,6 +410,14 @@ html, body {
       <div id="multiYearVariancePlot" class="plot-container"></div>
     </div>
 
+    <div class="plot-card">
+      <div class="plot-card-header">
+        <h3>Multi-year broad-sense heritability</h3>
+        <span>Entry-mean H² across years / environments</span>
+      </div>
+      <div id="multiYearHeritabilityPlot" class="plot-container"></div>
+    </div>
+
   </div>
 
   <div class="table-card">
@@ -401,6 +442,27 @@ html, body {
     </div>
   </div>
 
+  <div class="table-card">
+    <div class="plot-card-header">
+      <h3>Variance components and heritability</h3>
+      <span>Balanced multi-environment design</span>
+    </div>
+
+    <div class="table-wrap">
+      <table id="multiYearVarianceTable">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="multiYearH2Status" class="notice-stack"></div>
+  </div>
+
   <div class="export-row">
     <button id="downloadMultiYearBLUP" class="secondary-button">
       Download multi-year BLUP matrix
@@ -413,12 +475,15 @@ html, body {
 
   <div class="method-note">
     <strong>Method note:</strong>
-    The browser implementation performs year-effect adjustment followed by
-    empirical shrinkage to generate BLUP-style genotype estimates. These
-    estimates are intended for exploratory phenotype analysis. For complex
-    unbalanced designs, spatial effects, multiple random-effect structures,
-    or formal REML inference, confirm the results using a dedicated
-    mixed-model package such as ASReml, sommer, lme4, or equivalent.
+    The browser implementation performs year/environment-effect adjustment
+    followed by empirical shrinkage to generate BLUP-style genotype estimates.
+    For balanced genotype × environment × replicate data, broad-sense
+    entry-mean heritability is estimated as
+    H² = σ²G / [σ²G + σ²G×E/E + σ²e/(E×R)].
+    These browser estimates are intended for exploratory phenotype analysis.
+    For unbalanced designs, spatial effects, multiple random-effect structures,
+    or formal REML inference, confirm the results using dedicated mixed-model
+    software such as ASReml, sommer, lme4, or equivalent.
   </div>
 </section>
 

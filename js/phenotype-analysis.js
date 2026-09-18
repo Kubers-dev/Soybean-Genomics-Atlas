@@ -724,679 +724,1265 @@
   $("downloadReport").addEventListener("click",()=>{const lines=["Soybean Genomics Atlas — Phenotype & GWAS Analysis","",`Accession column: ${accessionKey}`,`Replicate column: ${replicateKey||"Not detected"}`,`Observations: ${rows.length}`,`Accessions: ${new Set(rows.map(r=>String(r[accessionKey]).trim()).filter(Boolean)).size}`,`Traits: ${traits.length}`,"","Trait statistics:"];traits.forEach(t=>{const v=rows.map(r=>num(r[t])).filter(Number.isFinite);lines.push(`${t}: N=${v.length}; mean=${fmt(mean(v))}; SD=${fmt(sd(v))}; CV%=${fmt(sd(v)/mean(v)*100,2)}; H2=${fmt(h2ForTrait(t))}`)});download("soybean_phenotype_analysis_report.txt",lines.join("\n"),"text/plain;charset=utf-8")});
 /* ============================================================
    MULTI-YEAR / MULTI-ENVIRONMENT PHENOTYPE ANALYSIS
+   Independent dataset and analysis state
    ============================================================ */
 
-let yearKey = null;
-let yearEnvironmentKeys = [];
+(() => {
+  "use strict";
 
-function detectYearColumns(headers) {
-  const patterns = [
-    /^year$/i,
-    /year/i,
-    /season/i,
-    /environment/i,
-    /^env$/i,
-    /location/i,
-    /site/i,
-    /trial/i
-  ];
+  const $m = id => document.getElementById(id);
 
-  yearEnvironmentKeys = headers.filter(h =>
-    patterns.some(pattern => pattern.test(String(h)))
-  );
+  let multiRows = [];
+  let multiAccessionKey = null;
+  let multiReplicateKey = null;
+  let multiYearKey = null;
+  let multiYearEnvironmentKeys = [];
+  let multiTraits = [];
+  let multiCurrentPlots = {};
 
-  return yearEnvironmentKeys;
-}
+  function mNum(v) {
+    if (v === null || v === undefined || String(v).trim() === "") return NaN;
+    const n = Number(String(v).replace(/,/g, ""));
+    return Number.isFinite(n) ? n : NaN;
+  }
 
-function detectYearColumn(headers) {
-  const candidates = detectYearColumns(headers);
+  function mMean(a) {
+    const x = a.filter(Number.isFinite);
+    return x.length ? x.reduce((s,v) => s + v, 0) / x.length : NaN;
+  }
 
-  const preferred = candidates.find(h =>
-    /^year$/i.test(String(h).trim())
-  );
+  function mSD(a) {
+    const x = a.filter(Number.isFinite);
+    const m = mMean(x);
+    return x.length > 1
+      ? Math.sqrt(x.reduce((s,v) => s + (v-m)**2, 0) / (x.length-1))
+      : NaN;
+  }
 
-  return preferred || candidates[0] || null;
-}
+  function mEsc(s) {
+    return String(s ?? "").replace(/[&<>"']/g, m => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#39;"
+    }[m]));
+  }
 
-function multiYearLevels() {
-  if (!yearKey) return [];
+  function mFmt(v, d=3) {
+    return Number.isFinite(v)
+      ? Number(v).toLocaleString(undefined,{maximumFractionDigits:d})
+      : "—";
+  }
 
-  const values = rows
-    .map(r => r[yearKey])
-    .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
-    .map(v => String(v).trim());
+  function mDownload(name,text,type="text/csv;charset=utf-8") {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text],{type}));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href),500);
+  }
 
-  return [...new Set(values)].sort((a, b) =>
-    a.localeCompare(b, undefined, { numeric: true })
-  );
-}
+  function detectMultiKeys(headers) {
+    const low = headers.map(h => String(h).toLowerCase().trim());
 
-function multiYearData(trait) {
-  if (!accessionKey || !yearKey || !trait) return [];
-
-  return rows
-    .map(r => ({
-      accession: String(r[accessionKey] ?? '').trim(),
-      year: String(r[yearKey] ?? '').trim(),
-      value: Number(r[trait])
-    }))
-    .filter(d =>
-      d.accession &&
-      d.year &&
-      Number.isFinite(d.value)
+    const accIndex = low.findIndex(x =>
+      /^(accession|genotype|germplasm|taxa|taxon|line|entry|sample|id)$/.test(x)
     );
-}
 
-function multiYearBLUP(trait) {
-  const data = multiYearData(trait);
+    multiAccessionKey =
+      accIndex >= 0 ? headers[accIndex] : headers[0];
 
-  if (!data.length) return null;
-
-  const years = [...new Set(data.map(d => d.year))];
-
-  const yearMeans = {};
-  years.forEach(y => {
-    const vals = data.filter(d => d.year === y).map(d => d.value);
-    yearMeans[y] = vals.reduce((a,b) => a+b, 0) / vals.length;
-  });
-
-  const adjusted = data.map(d => ({
-    ...d,
-    adjusted: d.value - yearMeans[d.year]
-  }));
-
-  const accessions = [...new Set(adjusted.map(d => d.accession))];
-
-  const accessionStats = accessions.map(acc => {
-    const vals = adjusted
-      .filter(d => d.accession === acc)
-      .map(d => d.adjusted);
-
-    const mean = vals.reduce((a,b) => a+b, 0) / vals.length;
-
-    const rawVals = data
-      .filter(d => d.accession === acc)
-      .map(d => d.value);
-
-    const rawMean =
-      rawVals.reduce((a,b) => a+b, 0) / rawVals.length;
-
-    return {
-      accession: acc,
-      mean,
-      rawMean,
-      n: vals.length
-    };
-  });
-
-  const grand =
-    adjusted.reduce((a,b) => a + b.adjusted, 0) /
-    adjusted.length;
-
-  const genotypeSS = accessionStats.reduce(
-    (s, d) => s + d.n * Math.pow(d.mean - grand, 2),
-    0
-  );
-
-  const vg =
-    accessions.length > 1
-      ? genotypeSS / Math.max(accessions.length - 1, 1)
-      : 0;
-
-  const residuals = adjusted.map(d => {
-    const g = accessionStats.find(
-      x => x.accession === d.accession
+    const repIndex = low.findIndex(x =>
+      /^(replicate|rep|replication|block)$/.test(x)
     );
-    return Math.pow(d.adjusted - g.mean, 2);
-  });
 
-  const ve =
-    residuals.reduce((a,b) => a+b, 0) /
-    Math.max(residuals.length - accessions.length, 1);
+    multiReplicateKey =
+      repIndex >= 0
+        ? headers[repIndex]
+        : headers.find(h => /replicate|rep\b/i.test(String(h))) || null;
 
-  const reliability =
-    vg > 0
-      ? vg / (vg + ve / Math.max(years.length, 1))
-      : 0;
+    const yearPatterns = [
+      /^year$/i,
+      /year/i,
+      /season/i,
+      /environment/i,
+      /^env$/i,
+      /location/i,
+      /site/i,
+      /trial/i
+    ];
 
-  const blups = accessionStats.map(d => {
-    const shrinkage =
-      (reliability * d.n) /
-      (1 + reliability * d.n);
+    multiYearEnvironmentKeys = headers.filter(h =>
+      yearPatterns.some(pattern => pattern.test(String(h)))
+    );
 
-    return {
-      ...d,
-      blup: grand + shrinkage * (d.mean - grand)
+    const preferredYear =
+      headers.find(h => /^year$/i.test(String(h).trim())) ||
+      multiYearEnvironmentKeys[0] ||
+      null;
+
+    multiYearKey = preferredYear;
+
+    multiTraits = headers.filter(h =>
+      h !== multiAccessionKey &&
+      h !== multiReplicateKey &&
+      !multiYearEnvironmentKeys.includes(h) &&
+      multiRows.some(r => Number.isFinite(mNum(r[h])))
+    );
+  }
+
+  function parseMultiYearWorkbook(file) {
+    const reader = new FileReader();
+
+    reader.onload = e => {
+      try {
+        let wb;
+
+        if (/\.csv$|\.tsv$|\.txt$/i.test(file.name)) {
+          const text = new TextDecoder().decode(e.target.result);
+          wb = XLSX.read(text,{
+            type:"string",
+            cellDates:false,
+            raw:false
+          });
+        } else {
+          wb = XLSX.read(e.target.result,{
+            type:"array",
+            cellDates:false,
+            raw:false
+          });
+        }
+
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+
+        /*
+         * IMPORTANT:
+         * This dataset is stored only in multiRows.
+         * It never modifies the one-year rows variable.
+         */
+        multiRows = XLSX.utils.sheet_to_json(sheet,{defval:""});
+
+        if (!multiRows.length) {
+          throw Error("The multi-year file contains no data rows.");
+        }
+
+        detectMultiKeys(Object.keys(multiRows[0]));
+
+        if (!multiAccessionKey || !multiTraits.length) {
+          throw Error(
+            "Could not identify an accession column and at least one numeric trait."
+          );
+        }
+
+        if (!multiYearKey) {
+          throw Error(
+            "No Year / Environment column was detected. Include a column named Year, Environment, Season, Location, Site, or Trial."
+          );
+        }
+
+        renderMultiYearOverview(file.name);
+        initializeMultiYearSelectors();
+        renderMultiYearAnalysis();
+
+        const msg = $m("multiYearUploadMessage");
+        if (msg) {
+          msg.textContent =
+            `Loaded ${multiRows.length.toLocaleString()} observations from ${file.name}. ` +
+            `This dataset is independent of the one-year phenotype dataset.`;
+        }
+
+      } catch(err) {
+        const msg = $m("multiYearUploadMessage");
+        if (msg) msg.textContent = `Error: ${err.message}`;
+
+        $m("multiYearSection")?.setAttribute("hidden","");
+      }
     };
-  });
 
-  const grouped = {};
-  data.forEach(d => {
-    if (!grouped[d.accession]) grouped[d.accession] = {};
-    grouped[d.accession][d.year] = d.value;
-  });
+    reader.readAsArrayBuffer(file);
+  }
 
-  const gxYear = blups.map(b => {
-    const vals = years
-      .map(y => grouped[b.accession]?.[y])
-      .filter(Number.isFinite);
+  function renderMultiYearOverview(fileName) {
+    const accessions = [
+      ...new Set(
+        multiRows
+          .map(r => String(r[multiAccessionKey] ?? "").trim())
+          .filter(Boolean)
+      )
+    ];
 
-    const m =
-      vals.length
-        ? vals.reduce((a,b) => a+b, 0) / vals.length
-        : NaN;
+    const environments = [
+      ...new Set(
+        multiRows
+          .map(r => String(r[multiYearKey] ?? "").trim())
+          .filter(Boolean)
+      )
+    ];
 
-    const sd =
-      vals.length > 1
-        ? Math.sqrt(
-            vals.reduce((s,v) => s + Math.pow(v-m,2),0) /
-            (vals.length - 1)
+    const replicates = multiReplicateKey
+      ? [
+          ...new Set(
+            multiRows
+              .map(r => String(r[multiReplicateKey] ?? "").trim())
+              .filter(Boolean)
           )
-        : 0;
+        ]
+      : [];
 
-    return {
-      ...b,
-      yearsPresent: vals.length,
-      gxYearSD: sd
-    };
-  });
+    const cards = $m("multiYearSummaryCards");
 
-  const allValues = data.map(d => d.value);
-  const overallMean =
-    allValues.reduce((a,b) => a+b,0) /
-    allValues.length;
+    if (cards) {
+      cards.innerHTML = [
+        [accessions.length,"Accessions"],
+        [environments.length,"Years / Environments"],
+        [multiReplicateKey ? replicates.length : "—","Replicates"],
+        [multiTraits.length,"Numeric traits"],
+        [multiRows.length,"Observations"]
+      ].map(([v,l]) =>
+        `<div class="metric">
+          <div class="metric-value">${mFmt(v,0)}</div>
+          <div class="metric-label">${mEsc(l)}</div>
+        </div>`
+      ).join("");
+    }
 
-  const totalVar =
-    allValues.length > 1
-      ? allValues.reduce(
-          (s,v) => s + Math.pow(v-overallMean,2), 0
-        ) / (allValues.length - 1)
-      : 0;
+    const warning = $m("multiYearWarnings");
 
-  const gVar = vg;
-  const residualVar = Math.max(ve, 0);
-  const gxVar = Math.max(
-    totalVar - gVar - residualVar,
-    0
-  );
-
-  return {
-    data,
-    years,
-    yearMeans,
-    adjusted,
-    blups: gxYear,
-    vg: gVar,
-    gxVar,
-    ve: residualVar,
-    totalVar,
-    heritability:
-      (gVar + gxVar) > 0
-        ? gVar / (gVar + gxVar + residualVar)
-        : 0
-  };
-}
-
-function pearsonSimple(a, b) {
-  const pairs = [];
-
-  for (let i = 0; i < a.length; i++) {
-    if (Number.isFinite(a[i]) && Number.isFinite(b[i])) {
-      pairs.push([a[i], b[i]]);
+    if (warning) {
+      warning.innerHTML =
+        `<div class="notice">
+          Detected accession column:
+          <b>${mEsc(multiAccessionKey)}</b>
+          · Year / environment column:
+          <b>${mEsc(multiYearKey)}</b>
+          ${multiReplicateKey
+            ? ` · Replicate column: <b>${mEsc(multiReplicateKey)}</b>`
+            : " · No replicate column was detected"}
+          · Dataset:
+          <b>${mEsc(fileName)}</b>
+        </div>`;
     }
   }
 
-  if (pairs.length < 2) return NaN;
+  function initializeMultiYearSelectors() {
+    const traitSelect = $m("multiYearTraitSelect");
+    const yearSelect = $m("multiYearColumnSelect");
 
-  const ma =
-    pairs.reduce((s,p) => s+p[0],0) / pairs.length;
-  const mb =
-    pairs.reduce((s,p) => s+p[1],0) / pairs.length;
+    if (!traitSelect || !yearSelect) return;
 
-  let num = 0;
-  let da = 0;
-  let db = 0;
+    traitSelect.innerHTML = multiTraits
+      .map(t => `<option value="${mEsc(t)}">${mEsc(t)}</option>`)
+      .join("");
 
-  pairs.forEach(([x,y]) => {
-    num += (x-ma)*(y-mb);
-    da += Math.pow(x-ma,2);
-    db += Math.pow(y-mb,2);
-  });
+    yearSelect.innerHTML = multiYearEnvironmentKeys
+      .map(h => `<option value="${mEsc(h)}">${mEsc(h)}</option>`)
+      .join("");
 
-  return da && db
-    ? num / Math.sqrt(da*db)
-    : NaN;
-}
+    if (multiYearKey && multiYearEnvironmentKeys.includes(multiYearKey)) {
+      yearSelect.value = multiYearKey;
+    }
 
-function renderMultiYearAnalysis() {
-  const traitSelect =
-    document.getElementById('multiYearTraitSelect');
+    traitSelect.onchange = renderMultiYearAnalysis;
 
-  const yearSelect =
-    document.getElementById('multiYearColumnSelect');
-
-  if (!traitSelect || !yearSelect || !traits.length) return;
-
-  traitSelect.innerHTML = traits
-    .map(t => `<option value="${t}">${t}</option>`)
-    .join('');
-
-  yearSelect.innerHTML = yearKey
-    ? `<option value="${yearKey}">${yearKey}</option>`
-    : '<option>No year column detected</option>';
-
-  if (!yearKey) {
-    document.getElementById('multiYearSection')?.classList.add('hidden');
-    return;
-  }
-
-  document.getElementById('multiYearSection')?.classList.remove('hidden');
-
-  const trait = traitSelect.value;
-
-  if (yearSelect.value) {
-    yearKey = yearSelect.value;
-  }
-
-  const result = multiYearBLUP(trait);
-
-  if (!result) return;
-
-  renderMultiYearBLUP(result);
-  renderMultiYearInteraction(result);
-  renderMultiYearCorrelation(result);
-  renderMultiYearHeatmap(result);
-  renderMultiYearVariance(result);
-  renderMultiYearTable(result);
-}
-
-function renderMultiYearBLUP(result) {
-  const container =
-    document.getElementById('multiYearBlupPlot');
-
-  if (!container) return;
-
-  const top = [...result.blups]
-    .sort((a,b) => b.blup-a.blup)
-    .slice(0, 30)
-    .reverse();
-
-  Plotly.react(
-    container,
-    [{
-      type: 'bar',
-      orientation: 'h',
-      x: top.map(d => d.blup),
-      y: top.map(d => d.accession),
-      hovertemplate:
-        '<b>%{y}</b><br>BLUP: %{x:.4f}<extra></extra>'
-    }],
-    {
-      margin: {l: 100, r: 30, t: 20, b: 50},
-      xaxis: {title: 'BLUP estimate'},
-      yaxis: {title: ''},
-      paper_bgcolor: 'transparent',
-      plot_bgcolor: 'transparent'
-    },
-    {responsive:true, displaylogo:false}
-  );
-}
-
-function renderMultiYearInteraction(result) {
-  const container =
-    document.getElementById('multiYearInteractionPlot');
-
-  if (!container) return;
-
-  const traces = result.years.map(year => {
-    const x = [];
-    const y = [];
-
-    result.data
-      .filter(d => d.year === year)
-      .forEach(d => {
-        x.push(d.accession);
-        y.push(d.value);
-      });
-
-    return {
-      type: 'scatter',
-      mode: 'markers',
-      name: year,
-      x,
-      y
+    yearSelect.onchange = () => {
+      multiYearKey = yearSelect.value;
+      renderMultiYearAnalysis();
     };
-  });
+  }
 
-  Plotly.react(
-    container,
-    traces,
-    {
-      margin: {l: 60, r: 20, t: 20, b: 100},
-      xaxis: {
-        title: 'Accession',
-        tickangle: -60
-      },
-      yaxis: {title: 'Trait value'},
-      paper_bgcolor: 'transparent',
-      plot_bgcolor: 'transparent'
-    },
-    {responsive:true, displaylogo:false}
-  );
-}
+  function multiYearData(trait) {
+    if (!multiAccessionKey || !multiYearKey || !trait) return [];
 
-function renderMultiYearCorrelation(result) {
-  const container =
-    document.getElementById('multiYearCorrelationPlot');
-
-  if (!container) return;
-
-  const accessions =
-    [...new Set(result.data.map(d => d.accession))];
-
-  const matrix = result.years.map(y1 =>
-    result.years.map(y2 => {
-      const a = [];
-      const b = [];
-
-      accessions.forEach(acc => {
-        const d1 = result.data.find(
-          d => d.accession === acc && d.year === y1
-        );
-
-        const d2 = result.data.find(
-          d => d.accession === acc && d.year === y2
-        );
-
-        if (d1 && d2) {
-          a.push(d1.value);
-          b.push(d2.value);
-        }
-      });
-
-      return pearsonSimple(a,b);
-    })
-  );
-
-  Plotly.react(
-    container,
-    [{
-      type:'heatmap',
-      z:matrix,
-      x:result.years,
-      y:result.years,
-      zmin:-1,
-      zmax:1,
-      colorscale:'RdBu'
-    }],
-    {
-      margin:{l:70,r:20,t:20,b:60},
-      xaxis:{title:'Year / environment'},
-      yaxis:{title:'Year / environment'},
-      paper_bgcolor:'transparent',
-      plot_bgcolor:'transparent'
-    },
-    {responsive:true,displaylogo:false}
-  );
-}
-
-function renderMultiYearHeatmap(result) {
-  const container =
-    document.getElementById('multiYearHeatmapPlot');
-
-  if (!container) return;
-
-  const top = [...result.blups]
-    .sort((a,b) => b.blup-a.blup)
-    .slice(0, 40);
-
-  const z = top.map(acc =>
-    result.years.map(year => {
-      const d = result.data.find(
-        x =>
-          x.accession === acc.accession &&
-          x.year === year
+    return multiRows
+      .map(r => ({
+        accession: String(r[multiAccessionKey] ?? "").trim(),
+        year: String(r[multiYearKey] ?? "").trim(),
+        replicate: multiReplicateKey
+          ? String(r[multiReplicateKey] ?? "").trim()
+          : "",
+        value: mNum(r[trait])
+      }))
+      .filter(d =>
+        d.accession &&
+        d.year &&
+        Number.isFinite(d.value)
       );
-      return d ? d.value : null;
-    })
-  );
+  }
 
-  Plotly.react(
-    container,
-    [{
-      type:'heatmap',
-      z,
-      x:result.years,
-      y:top.map(d=>d.accession),
-      colorscale:'Viridis',
-      hoverongaps:false
-    }],
-    {
-      margin:{l:100,r:20,t:20,b:60},
-      xaxis:{title:'Year / environment'},
-      yaxis:{title:'Accession'},
-      paper_bgcolor:'transparent',
-      plot_bgcolor:'transparent'
-    },
-    {responsive:true,displaylogo:false}
-  );
-}
+  /*
+   * Balanced multi-environment ANOVA variance components.
+   *
+   * Model:
+   *   Y_ijk = mu + G_i + E_j + GE_ij + e_ijk
+   *
+   * For balanced data:
+   *   MS_G  = sigma_e² + R*sigma_GE² + R*E*sigma_G²
+   *   MS_GE = sigma_e² + R*sigma_GE²
+   *   MS_e  = sigma_e²
+   *
+   * Entry-mean broad-sense heritability:
+   *
+   * H² = sigma_G² /
+   *      (sigma_G² + sigma_GE²/E + sigma_e²/(E*R))
+   *
+   * If the design is unbalanced, variance components are not
+   * estimated here and formal REML should be used.
+   */
+  function multiYearVarianceComponents(trait) {
+    const data = multiYearData(trait);
 
-function renderMultiYearVariance(result) {
-  const container =
-    document.getElementById('multiYearVariancePlot');
+    if (!data.length || !multiReplicateKey) {
+      return {
+        balanced:false,
+        genotypeVariance:NaN,
+        gxEnvironmentVariance:NaN,
+        residualVariance:NaN,
+        heritability:NaN,
+        environments:0,
+        replicates:0,
+        accessions:0
+      };
+    }
 
-  if (!container) return;
-
-  Plotly.react(
-    container,
-    [{
-      type:'bar',
-      x:['Genotype','G × Year','Residual'],
-      y:[result.vg,result.gxVar,result.ve]
-    }],
-    {
-      margin:{l:60,r:20,t:20,b:70},
-      yaxis:{title:'Variance'},
-      paper_bgcolor:'transparent',
-      plot_bgcolor:'transparent'
-    },
-    {responsive:true,displaylogo:false}
-  );
-}
-
-function renderMultiYearTable(result) {
-  const tbody =
-    document.querySelector('#multiYearSummaryTable tbody');
-
-  if (!tbody) return;
-
-  tbody.innerHTML = [...result.blups]
-    .sort((a,b) => b.blup-a.blup)
-    .map(d => `
-      <tr>
-        <td>${d.accession}</td>
-        <td>${d.blup.toFixed(4)}</td>
-        <td>${d.rawMean.toFixed(4)}</td>
-        <td>${d.yearsPresent}</td>
-        <td>${d.gxYearSD.toFixed(4)}</td>
-      </tr>
-    `)
-    .join('');
-}
-
-function downloadMultiYearBLUPMatrix() {
-  const trait =
-    document.getElementById('multiYearTraitSelect')?.value;
-
-  const result = multiYearBLUP(trait);
-
-  if (!result) return;
-
-  const matrix = {};
-
-  result.data.forEach(d => {
-    if (!matrix[d.accession])
-      matrix[d.accession] = {};
-
-    matrix[d.accession][d.year] = d.value;
-  });
-
-  const header = [
-    accessionKey,
-    ...result.years,
-    'Overall_BLUP',
-    'Raw_Mean',
-    'GX_Year_SD'
-  ];
-
-  const lines = [header.join(',')];
-
-  result.blups.forEach(d => {
-    const row = [
-      d.accession,
-      ...result.years.map(y =>
-        matrix[d.accession]?.[y] ?? ''
-      ),
-      d.blup,
-      d.rawMean,
-      d.gxYearSD
+    const accessions = [
+      ...new Set(data.map(d => d.accession))
     ];
 
-    lines.push(
-      row.map(v =>
-        `"${String(v).replaceAll('"','""')}"`
-      ).join(',')
-    );
-  });
+    const environments = [
+      ...new Set(data.map(d => d.year))
+    ];
 
-  const blob = new Blob(
-    [lines.join('\n')],
-    {type:'text/csv;charset=utf-8'}
-  );
+    const replicates = [
+      ...new Set(data.map(d => d.replicate))
+    ];
 
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download =
-    `multi_year_BLUP_${trait}.csv`;
-  a.click();
+    const E = environments.length;
+    const R = replicates.length;
+    const G = accessions.length;
 
-  URL.revokeObjectURL(a.href);
-}
+    if (E < 2 || R < 2 || G < 2) {
+      return {
+        balanced:false,
+        genotypeVariance:NaN,
+        gxEnvironmentVariance:NaN,
+        residualVariance:NaN,
+        heritability:NaN,
+        environments:E,
+        replicates:R,
+        accessions:G
+      };
+    }
 
-function downloadMultiYearReport() {
-  const trait =
-    document.getElementById('multiYearTraitSelect')?.value;
+    /*
+     * Require exactly one observation for every
+     * genotype × environment × replicate cell.
+     */
+    const cells = new Map();
 
-  const result = multiYearBLUP(trait);
-
-  if (!result) return;
-
-  const lines = [
-    'MULTI-YEAR PHENOTYPE ANALYSIS REPORT',
-    '',
-    `Trait: ${trait}`,
-    `Accession column: ${accessionKey}`,
-    `Year/environment column: ${yearKey}`,
-    `Years/environments: ${result.years.join(', ')}`,
-    '',
-    `Genotype variance: ${result.vg}`,
-    `G × Year variance: ${result.gxVar}`,
-    `Residual variance: ${result.ve}`,
-    `Total variance: ${result.totalVar}`,
-    `Genotype proportion: ${result.heritability}`,
-    '',
-    'Method:',
-    'Year-effect adjustment followed by empirical shrinkage to generate BLUP-style genotype estimates.',
-    'For complex unbalanced, spatial, or formal REML analyses, confirm results using a dedicated mixed-model package.',
-    '',
-    'ACCESSION,BLUP,RAW_MEAN,YEARS_PRESENT,GX_YEAR_SD'
-  ];
-
-  result.blups
-    .sort((a,b)=>b.blup-a.blup)
-    .forEach(d => {
-      lines.push([
-        d.accession,
-        d.blup,
-        d.rawMean,
-        d.yearsPresent,
-        d.gxYearSD
-      ].join(','));
+    data.forEach(d => {
+      const key = `${d.accession}|||${d.year}|||${d.replicate}`;
+      if (!cells.has(key)) cells.set(key,[]);
+      cells.get(key).push(d.value);
     });
 
-  const blob = new Blob(
-    [lines.join('\n')],
-    {type:'text/plain;charset=utf-8'}
-  );
+    const expected = G * E * R;
 
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download =
-    `multi_year_report_${trait}.txt`;
-  a.click();
+    const complete =
+      cells.size === expected &&
+      [...cells.values()].every(v => v.length === 1);
 
-  URL.revokeObjectURL(a.href);
-}
+    if (!complete) {
+      return {
+        balanced:false,
+        genotypeVariance:NaN,
+        gxEnvironmentVariance:NaN,
+        residualVariance:NaN,
+        heritability:NaN,
+        environments:E,
+        replicates:R,
+        accessions:G
+      };
+    }
 
-function initMultiYearAnalysis() {
-  if (typeof rows === 'undefined' || !rows.length) return;
+    const grand = mMean(data.map(d => d.value));
 
-  const headers = Object.keys(rows[0]);
+    const gMeans = new Map();
+    const geMeans = new Map();
 
-  yearKey = detectYearColumn(headers);
+    accessions.forEach(g => {
+      const vals = data
+        .filter(d => d.accession === g)
+        .map(d => d.value);
+      gMeans.set(g,mMean(vals));
 
-  const traitSelect =
-    document.getElementById('multiYearTraitSelect');
+      environments.forEach(e => {
+        const vals = data
+          .filter(d => d.accession === g && d.year === e)
+          .map(d => d.value);
+        geMeans.set(`${g}|||${e}`,mMean(vals));
+      });
+    });
 
-  const yearSelect =
-    document.getElementById('multiYearColumnSelect');
+    const eMeans = new Map();
 
-  if (!traitSelect || !yearSelect) return;
-
-  traitSelect.innerHTML = traits
-    .map(t =>
-      `<option value="${esc(t)}">${esc(t)}</option>`
-    )
-    .join('');
-
-  yearSelect.innerHTML = yearEnvironmentKeys.length
-    ? yearEnvironmentKeys
-        .map(h =>
-          `<option value="${esc(h)}">${esc(h)}</option>`
+    environments.forEach(e => {
+      eMeans.set(
+        e,
+        mMean(
+          data
+            .filter(d => d.year === e)
+            .map(d => d.value)
         )
-        .join('')
-    : '<option value="">No year/environment column detected</option>';
+      );
+    });
 
-  if (yearKey && yearEnvironmentKeys.includes(yearKey)) {
-    yearSelect.value = yearKey;
+    /*
+     * Genotype SS.
+     */
+    const ssG =
+      E * R *
+      accessions.reduce(
+        (s,g) => s + Math.pow(gMeans.get(g) - grand,2),
+        0
+      );
+
+    /*
+     * Environment SS is not needed for the variance
+     * components below but is calculated for completeness.
+     */
+    const ssE =
+      G * R *
+      environments.reduce(
+        (s,e) => s + Math.pow(eMeans.get(e) - grand,2),
+        0
+      );
+
+    /*
+     * G×E SS.
+     */
+    let ssGE = 0;
+
+    accessions.forEach(g => {
+      environments.forEach(e => {
+        const ge = geMeans.get(`${g}|||${e}`);
+        ssGE += Math.pow(
+          ge - gMeans.get(g) - eMeans.get(e) + grand,
+          2
+        );
+      });
+    });
+
+    ssGE *= R;
+
+    /*
+     * Residual SS.
+     */
+    let ssError = 0;
+
+    data.forEach(d => {
+      const ge = geMeans.get(`${d.accession}|||${d.year}`);
+      const fitted =
+        ge;
+
+      ssError += Math.pow(d.value - fitted,2);
+    });
+
+    const dfG = G - 1;
+    const dfE = E - 1;
+    const dfGE = (G - 1) * (E - 1);
+    const dfError = G * E * (R - 1);
+
+    if (dfG <= 0 || dfGE <= 0 || dfError <= 0) {
+      return {
+        balanced:false,
+        genotypeVariance:NaN,
+        gxEnvironmentVariance:NaN,
+        residualVariance:NaN,
+        heritability:NaN,
+        environments:E,
+        replicates:R,
+        accessions:G
+      };
+    }
+
+    const msG = ssG / dfG;
+    const msGE = ssGE / dfGE;
+    const msError = ssError / dfError;
+
+    const residualVariance = Math.max(msError,0);
+
+    const gxEnvironmentVariance =
+      Math.max(
+        (msGE - msError) / R,
+        0
+      );
+
+    const genotypeVariance =
+      Math.max(
+        (msG - msGE) / (E * R),
+        0
+      );
+
+    const denominator =
+      genotypeVariance +
+      gxEnvironmentVariance / E +
+      residualVariance / (E * R);
+
+    const heritability =
+      denominator > 0
+        ? genotypeVariance / denominator
+        : NaN;
+
+    return {
+      balanced:true,
+      genotypeVariance,
+      gxEnvironmentVariance,
+      residualVariance,
+      heritability,
+      environments:E,
+      replicates:R,
+      accessions:G,
+      msG,
+      msGE,
+      msError,
+      ssG,
+      ssE,
+      ssGE,
+      ssError
+    };
   }
 
-  traitSelect.addEventListener(
-    'change',
-    renderMultiYearAnalysis
-  );
+  /*
+   * BLUP-style multi-environment genotype estimate.
+   *
+   * First remove the environment mean, then shrink the
+   * genotype effect toward zero according to estimated
+   * genetic and residual variation.
+   *
+   * This is an exploratory empirical BLUP-style estimate,
+   * not a full REML mixed-model solution.
+   */
+  function multiYearBLUP(trait) {
+    const data = multiYearData(trait);
 
-  yearSelect.addEventListener(
-    'change',
-    renderMultiYearAnalysis
-  );
+    if (!data.length) return null;
 
-  document
-    .getElementById('downloadMultiYearBLUP')
-    ?.addEventListener(
-      'click',
-      downloadMultiYearBLUPMatrix
+    const years = [
+      ...new Set(data.map(d => d.year))
+    ].sort((a,b) =>
+      a.localeCompare(b,undefined,{numeric:true})
     );
 
-  document
-    .getElementById('downloadMultiYearReport')
-    ?.addEventListener(
-      'click',
-      downloadMultiYearReport
+    const yearMeans = {};
+
+    years.forEach(y => {
+      yearMeans[y] =
+        mMean(
+          data
+            .filter(d => d.year === y)
+            .map(d => d.value)
+        );
+    });
+
+    const adjusted = data.map(d => ({
+      ...d,
+      adjusted:d.value - yearMeans[d.year]
+    }));
+
+    const accessions = [
+      ...new Set(adjusted.map(d => d.accession))
+    ];
+
+    const grand = mMean(
+      adjusted.map(d => d.adjusted)
     );
 
-  renderMultiYearAnalysis();
-}
+    const vc = multiYearVarianceComponents(trait);
+
+    const vg = Number.isFinite(vc.genotypeVariance)
+      ? vc.genotypeVariance
+      : 0;
+
+    const ve = Number.isFinite(vc.residualVariance)
+      ? vc.residualVariance
+      : 0;
+
+    const E = Math.max(years.length,1);
+
+    const accessionStats = accessions.map(acc => {
+      const vals = adjusted
+        .filter(d => d.accession === acc)
+        .map(d => d.adjusted);
+
+      const rawVals = data
+        .filter(d => d.accession === acc)
+        .map(d => d.value);
+
+      return {
+        accession:acc,
+        mean:mMean(vals),
+        rawMean:mMean(rawVals),
+        n:vals.length,
+        sd:mSD(vals)
+      };
+    });
+
+    const rEff =
+      multiReplicateKey && vc.replicates > 0
+        ? vc.replicates
+        : Math.max(1,Math.round(
+            data.length /
+            Math.max(accessions.length * E,1)
+          ));
+
+    const denominator =
+      vg + ve / Math.max(rEff * E,1);
+
+    const reliability =
+      denominator > 0
+        ? vg / denominator
+        : 0;
+
+    const blups = accessionStats.map(d => {
+      const shrinkage =
+        reliability > 0
+          ? (reliability * d.n) /
+            (1 + reliability * d.n)
+          : 0;
+
+      const effect =
+        Number.isFinite(d.mean) &&
+        Number.isFinite(grand)
+          ? shrinkage * (d.mean - grand)
+          : NaN;
+
+      return {
+        ...d,
+        blup:Number.isFinite(effect)
+          ? grand + effect
+          : NaN,
+        shrinkage
+      };
+    }).filter(d => Number.isFinite(d.blup));
+
+    const grouped = {};
+
+    data.forEach(d => {
+      if (!grouped[d.accession]) {
+        grouped[d.accession] = {};
+      }
+
+      if (!grouped[d.accession][d.year]) {
+        grouped[d.accession][d.year] = [];
+      }
+
+      grouped[d.accession][d.year].push(d.value);
+    });
+
+    const withInteraction = blups.map(b => {
+      const vals = years
+        .map(y => mMean(grouped[b.accession]?.[y] || []))
+        .filter(Number.isFinite);
+
+      const m = mMean(vals);
+
+      const gxYearSD =
+        vals.length > 1
+          ? Math.sqrt(
+              vals.reduce(
+                (s,v) => s + (v-m)**2,
+                0
+              ) / (vals.length-1)
+            )
+          : 0;
+
+      return {
+        ...b,
+        yearsPresent:vals.length,
+        gxYearSD
+      };
+    });
+
+    return {
+      data,
+      years,
+      yearMeans,
+      adjusted,
+      blups:withInteraction,
+      vg,
+      gxVar:Number.isFinite(vc.gxEnvironmentVariance)
+        ? vc.gxEnvironmentVariance
+        : NaN,
+      ve,
+      totalVar:
+        vg +
+        (Number.isFinite(vc.gxEnvironmentVariance)
+          ? vc.gxEnvironmentVariance
+          : 0) +
+        ve,
+      heritability:vc.heritability,
+      varianceComponents:vc
+    };
+  }
+
+  function pearsonSimple(a,b) {
+    const pairs = [];
+
+    for(let i=0;i<a.length;i++){
+      if(Number.isFinite(a[i]) && Number.isFinite(b[i])){
+        pairs.push([a[i],b[i]]);
+      }
+    }
+
+    if(pairs.length < 2) return NaN;
+
+    const ma = mMean(pairs.map(p => p[0]));
+    const mb = mMean(pairs.map(p => p[1]));
+
+    let numerator = 0;
+    let da = 0;
+    let db = 0;
+
+    pairs.forEach(([x,y]) => {
+      numerator += (x-ma)*(y-mb);
+      da += (x-ma)**2;
+      db += (y-mb)**2;
+    });
+
+    return da && db
+      ? numerator / Math.sqrt(da*db)
+      : NaN;
+  }
+
+  function renderMultiYearAnalysis() {
+    const traitSelect = $m("multiYearTraitSelect");
+    const yearSelect = $m("multiYearColumnSelect");
+
+    if (
+      !traitSelect ||
+      !yearSelect ||
+      !multiRows.length ||
+      !multiTraits.length ||
+      !multiYearKey
+    ) {
+      return;
+    }
+
+    if(yearSelect.value){
+      multiYearKey = yearSelect.value;
+    }
+
+    const trait = traitSelect.value;
+    const result = multiYearBLUP(trait);
+
+    if(!result) return;
+
+    $m("multiYearSection")?.removeAttribute("hidden");
+
+    renderMultiYearBLUP(result);
+    renderMultiYearInteraction(result);
+    renderMultiYearCorrelation(result);
+    renderMultiYearHeatmap(result);
+    renderMultiYearVariance(result);
+    renderMultiYearTable(result);
+    renderMultiYearHeritability(result);
+  }
+
+  function renderMultiYearBLUP(result) {
+    const container = $m("multiYearBlupPlot");
+    if(!container) return;
+
+    const top = [...result.blups]
+      .sort((a,b) => b.blup-a.blup)
+      .slice(0,30)
+      .reverse();
+
+    multiCurrentPlots.multiYearBlupPlot = true;
+
+    Plotly.react(
+      container,
+      [{
+        type:"bar",
+        orientation:"h",
+        x:top.map(d => d.blup),
+        y:top.map(d => d.accession),
+        hovertemplate:
+          "<b>%{y}</b><br>" +
+          "BLUP-style estimate: %{x:.4f}<extra></extra>"
+      }],
+      {
+        margin:{l:110,r:30,t:30,b:60},
+        xaxis:{title:"BLUP-style genotype estimate"},
+        yaxis:{title:"Accession"},
+        paper_bgcolor:"transparent",
+        plot_bgcolor:"transparent"
+      },
+      {responsive:true,displaylogo:false}
+    );
+  }
+
+  function renderMultiYearInteraction(result) {
+    const container = $m("multiYearInteractionPlot");
+    if(!container) return;
+
+    const traces = result.years.map(year => {
+      const x = [];
+      const y = [];
+
+      result.data
+        .filter(d => d.year === year)
+        .forEach(d => {
+          x.push(d.accession);
+          y.push(d.value);
+        });
+
+      return {
+        type:"scatter",
+        mode:"markers",
+        name:year,
+        x,
+        y,
+        hovertemplate:
+          "<b>%{x}</b><br>" +
+          "Trait value: %{y:.4f}<extra></extra>"
+      };
+    });
+
+    multiCurrentPlots.multiYearInteractionPlot = true;
+
+    Plotly.react(
+      container,
+      traces,
+      {
+        margin:{l:60,r:20,t:30,b:110},
+        xaxis:{
+          title:"Accession",
+          tickangle:-60
+        },
+        yaxis:{title:"Trait value"},
+        paper_bgcolor:"transparent",
+        plot_bgcolor:"transparent"
+      },
+      {responsive:true,displaylogo:false}
+    );
+  }
+
+  function renderMultiYearCorrelation(result) {
+    const container = $m("multiYearCorrelationPlot");
+    if(!container) return;
+
+    const accessions = [
+      ...new Set(result.data.map(d => d.accession))
+    ];
+
+    const matrix = result.years.map(y1 =>
+      result.years.map(y2 => {
+        const a = [];
+        const b = [];
+
+        accessions.forEach(acc => {
+          const d1 = result.data.find(
+            d => d.accession === acc && d.year === y1
+          );
+
+          const d2 = result.data.find(
+            d => d.accession === acc && d.year === y2
+          );
+
+          if(d1 && d2){
+            a.push(d1.value);
+            b.push(d2.value);
+          }
+        });
+
+        return pearsonSimple(a,b);
+      })
+    );
+
+    multiCurrentPlots.multiYearCorrelationPlot = true;
+
+    Plotly.react(
+      container,
+      [{
+        type:"heatmap",
+        z:matrix,
+        x:result.years,
+        y:result.years,
+        zmin:-1,
+        zmax:1,
+        colorscale:"RdBu",
+        text:matrix.map(row =>
+          row.map(v =>
+            Number.isFinite(v) ? v.toFixed(2) : "—"
+          )
+        ),
+        texttemplate:"%{text}",
+        hovertemplate:
+          "%{y} × %{x}<br>" +
+          "r = %{z:.3f}<extra></extra>"
+      }],
+      {
+        margin:{l:80,r:20,t:30,b:70},
+        xaxis:{title:"Year / environment"},
+        yaxis:{title:"Year / environment"},
+        paper_bgcolor:"transparent",
+        plot_bgcolor:"transparent"
+      },
+      {responsive:true,displaylogo:false}
+    );
+  }
+
+  function renderMultiYearHeatmap(result) {
+    const container = $m("multiYearHeatmapPlot");
+    if(!container) return;
+
+    const top = [...result.blups]
+      .sort((a,b) => b.blup-a.blup)
+      .slice(0,40);
+
+    const z = top.map(acc =>
+      result.years.map(year => {
+        const vals = result.data
+          .filter(d =>
+            d.accession === acc.accession &&
+            d.year === year
+          )
+          .map(d => d.value);
+
+        return vals.length ? mMean(vals) : null;
+      })
+    );
+
+    multiCurrentPlots.multiYearHeatmapPlot = true;
+
+    Plotly.react(
+      container,
+      [{
+        type:"heatmap",
+        z,
+        x:result.years,
+        y:top.map(d => d.accession),
+        colorscale:"Viridis",
+        hoverongaps:false
+      }],
+      {
+        margin:{l:110,r:20,t:30,b:70},
+        xaxis:{title:"Year / environment"},
+        yaxis:{title:"Accession"},
+        paper_bgcolor:"transparent",
+        plot_bgcolor:"transparent"
+      },
+      {responsive:true,displaylogo:false}
+    );
+  }
+
+  function renderMultiYearVariance(result) {
+    const container = $m("multiYearVariancePlot");
+    if(!container) return;
+
+    const vc = result.varianceComponents;
+
+    multiCurrentPlots.multiYearVariancePlot = true;
+
+    Plotly.react(
+      container,
+      [{
+        type:"bar",
+        x:[
+          "Genotype",
+          "G × Environment",
+          "Residual"
+        ],
+        y:[
+          vc.genotypeVariance,
+          vc.gxEnvironmentVariance,
+          vc.residualVariance
+        ],
+        hovertemplate:
+          "%{x}<br>Variance = %{y:.6g}<extra></extra>"
+      }],
+      {
+        margin:{l:70,r:20,t:30,b:90},
+        yaxis:{title:"Variance component"},
+        paper_bgcolor:"transparent",
+        plot_bgcolor:"transparent"
+      },
+      {responsive:true,displaylogo:false}
+    );
+  }
+
+  function renderMultiYearHeritability(result) {
+    const container = $m("multiYearHeritabilityPlot");
+    if(!container) return;
+
+    const h2 = result.heritability;
+
+    multiCurrentPlots.multiYearHeritabilityPlot = true;
+
+    Plotly.react(
+      container,
+      [{
+        type:"bar",
+        x:["Entry-mean H²"],
+        y:[Number.isFinite(h2) ? h2 : 0],
+        hovertemplate:
+          "H² = %{y:.4f}<extra></extra>"
+      }],
+      {
+        margin:{l:70,r:20,t:30,b:70},
+        yaxis:{
+          title:"Broad-sense heritability (H²)",
+          range:[0,1]
+        },
+        paper_bgcolor:"transparent",
+        plot_bgcolor:"transparent",
+        annotations:[
+          {
+            x:0,
+            y:Number.isFinite(h2) ? h2 : 0,
+            text:Number.isFinite(h2)
+              ? `H² = ${h2.toFixed(3)}`
+              : "Unbalanced design",
+            showarrow:true,
+            arrowhead:2
+          }
+        ]
+      },
+      {responsive:true,displaylogo:false}
+    );
+  }
+
+  function renderMultiYearTable(result) {
+    const tbody =
+      document.querySelector("#multiYearSummaryTable tbody");
+
+    if(!tbody) return;
+
+    const vc = result.varianceComponents;
+
+    tbody.innerHTML = [...result.blups]
+      .sort((a,b) => b.blup-a.blup)
+      .map(d => `
+        <tr>
+          <td>${mEsc(d.accession)}</td>
+          <td>${mFmt(d.blup,4)}</td>
+          <td>${mFmt(d.rawMean,4)}</td>
+          <td>${mFmt(d.yearsPresent,0)}</td>
+          <td>${mFmt(d.gxYearSD,4)}</td>
+        </tr>
+      `)
+      .join("");
+
+    const table = document.querySelector(
+      "#multiYearVarianceTable tbody"
+    );
+
+    if(table){
+      table.innerHTML = `
+        <tr>
+          <td>Genotypic variance (σ²G)</td>
+          <td>${mFmt(vc.genotypeVariance,6)}</td>
+        </tr>
+        <tr>
+          <td>G × Environment variance (σ²G×E)</td>
+          <td>${mFmt(vc.gxEnvironmentVariance,6)}</td>
+        </tr>
+        <tr>
+          <td>Residual variance (σ²e)</td>
+          <td>${mFmt(vc.residualVariance,6)}</td>
+        </tr>
+        <tr>
+          <td>Entry-mean broad-sense heritability (H²)</td>
+          <td>${Number.isFinite(vc.heritability)
+            ? vc.heritability.toFixed(4)
+            : "—"}</td>
+        </tr>
+        <tr>
+          <td>Years / environments (E)</td>
+          <td>${vc.environments}</td>
+        </tr>
+        <tr>
+          <td>Replicates (R)</td>
+          <td>${vc.replicates}</td>
+        </tr>
+        <tr>
+          <td>Design</td>
+          <td>${vc.balanced
+            ? "Balanced"
+            : "Unbalanced / incomplete"}</td>
+        </tr>
+      `;
+    }
+
+    const status = $m("multiYearH2Status");
+
+    if(status){
+      if(vc.balanced){
+        status.innerHTML =
+          `<div class="notice">
+            <b>Entry-mean H²:</b>
+            ${mFmt(vc.heritability,4)}
+            · E = ${vc.environments}
+            · R = ${vc.replicates}
+            · Balanced genotype × environment × replicate design detected.
+          </div>`;
+      } else {
+        status.innerHTML =
+          `<div class="notice">
+            <b>H² not estimated in the browser.</b>
+            The dataset is unbalanced/incomplete or lacks replicated observations.
+            Use a formal REML mixed-model analysis for this design.
+          </div>`;
+      }
+    }
+  }
+
+  function downloadMultiYearBLUPMatrix() {
+    const trait =
+      $m("multiYearTraitSelect")?.value;
+
+    const result = multiYearBLUP(trait);
+
+    if(!result) return;
+
+    const matrix = {};
+
+    result.data.forEach(d => {
+      if(!matrix[d.accession]){
+        matrix[d.accession] = {};
+      }
+
+      if(!matrix[d.accession][d.year]){
+        matrix[d.accession][d.year] = [];
+      }
+
+      matrix[d.accession][d.year].push(d.value);
+    });
+
+    const header = [
+      multiAccessionKey,
+      ...result.years,
+      "Overall_BLUP_style",
+      "Raw_Mean",
+      "GX_Environment_SD"
+    ];
+
+    const lines = [header.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")];
+
+    result.blups.forEach(d => {
+      const row = [
+        d.accession,
+        ...result.years.map(y =>
+          matrix[d.accession]?.[y]
+            ? mMean(matrix[d.accession][y])
+            : ""
+        ),
+        d.blup,
+        d.rawMean,
+        d.gxYearSD
+      ];
+
+      lines.push(
+        row.map(v =>
+          `"${String(v ?? "").replaceAll('"','""')}"`
+        ).join(",")
+      );
+    });
+
+    mDownload(
+      `multi_year_BLUP_${trait}.csv`,
+      lines.join("\n")
+    );
+  }
+
+  function downloadMultiYearReport() {
+    const trait =
+      $m("multiYearTraitSelect")?.value;
+
+    const result = multiYearBLUP(trait);
+
+    if(!result) return;
+
+    const vc = result.varianceComponents;
+
+    const lines = [
+      "SOYBEAN GENOMICS ATLAS — MULTI-YEAR / MULTI-ENVIRONMENT PHENOTYPE ANALYSIS",
+      "",
+      `Trait: ${trait}`,
+      `Accession column: ${multiAccessionKey}`,
+      `Replicate column: ${multiReplicateKey || "Not detected"}`,
+      `Year/environment column: ${multiYearKey}`,
+      `Years/environments: ${result.years.join(", ")}`,
+      `Accessions: ${vc.accessions}`,
+      `Replicates: ${vc.replicates}`,
+      "",
+      "VARIANCE COMPONENTS",
+      `Genotypic variance (sigma_G^2): ${vc.genotypeVariance}`,
+      `G x Environment variance (sigma_GxE^2): ${vc.gxEnvironmentVariance}`,
+      `Residual variance (sigma_e^2): ${vc.residualVariance}`,
+      `Entry-mean broad-sense heritability (H2): ${vc.heritability}`,
+      "",
+      "H2 FORMULA",
+      "H2 = sigma_G^2 / [sigma_G^2 + sigma_GxE^2/E + sigma_e^2/(E*R)]",
+      "",
+      "METHOD",
+      "Year/environment effects are adjusted before empirical shrinkage is applied to genotype means to generate BLUP-style estimates.",
+      "The multi-environment H2 estimate uses balanced-design ANOVA variance components.",
+      "For unbalanced, spatial, repeated-measure, or complex random-effect designs, confirm results using formal REML mixed-model software.",
+      "",
+      "ACCESSION,BLUP_STYLE,RAW_MEAN,YEARS_PRESENT,GX_ENVIRONMENT_SD"
+    ];
+
+    result.blups
+      .sort((a,b) => b.blup-a.blup)
+      .forEach(d => {
+        lines.push([
+          d.accession,
+          d.blup,
+          d.rawMean,
+          d.yearsPresent,
+          d.gxYearSD
+        ].join(","));
+      });
+
+    mDownload(
+      `multi_year_report_${trait}.txt`,
+      lines.join("\n"),
+      "text/plain;charset=utf-8"
+    );
+  }
+
+  function initMultiYearAnalysis() {
+    const fileInput = $m("multiYearFile");
+
+    if(!fileInput) return;
+
+    fileInput.addEventListener("change",e => {
+      if(e.target.files[0]){
+        parseMultiYearWorkbook(e.target.files[0]);
+      }
+    });
+
+    $m("downloadMultiYearBLUP")
+      ?.addEventListener("click",downloadMultiYearBLUPMatrix);
+
+    $m("downloadMultiYearReport")
+      ?.addEventListener("click",downloadMultiYearReport);
+  }
+
+  /*
+   * The multi-year upload is initialized independently of
+   * parseWorkbook() and independently of the one-year data.
+   */
+  if(document.readyState === "loading"){
+    document.addEventListener(
+      "DOMContentLoaded",
+      initMultiYearAnalysis,
+      {once:true}
+    );
+  } else {
+    initMultiYearAnalysis();
+  }
 
 })();
