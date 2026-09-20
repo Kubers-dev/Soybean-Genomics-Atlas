@@ -257,7 +257,7 @@ class GWASHandler(BaseHTTPRequestHandler):
                         files.append({
                             "name": p.name,
                             "path": str(p.relative_to(output_dir)),
-                            "url": f"/result/{run_id}/{p.relative_to(output_dir).as_posix()}",
+                            "url": f"/result/{run_id}/results/{p.relative_to(output_dir).as_posix()}",
                             "size": p.stat().st_size
                         })
 

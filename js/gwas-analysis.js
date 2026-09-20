@@ -1,243 +1,267 @@
 (() => {
-  'use strict';
+  "use strict";
 
-  const state = {
-    phenotype: [],
-    genotype: [],
-    map: [],
-    kinship: null,
-    pc: null,
-    covariates: null,
-    phenotypeColumns: [],
-    gwasResults: []
-  };
+  const API = "http://127.0.0.1:8765";
 
-  const $ = id => document.getElementById(id);
+  const phenotypeInput = document.getElementById("gwasPhenotype");
+  const genotypeInput = document.getElementById("gwasGenotype");
+  const codeEditor = document.getElementById("rCodeEditor");
+  const loadCodeButton = document.getElementById("loadRCode");
+  const runButton = document.getElementById("runGWAS");
 
-  function selectedModels() {
-    return [...document.querySelectorAll('input[name="gwasModel"]:checked')].map(x => x.value);
+  const inputStatus = document.getElementById("gwasInputStatus");
+  const runStatus = document.getElementById("gwasRunStatus");
+
+  const runState = document.getElementById("runState");
+  const runId = document.getElementById("runId");
+  const runTime = document.getElementById("runTime");
+  const exitCode = document.getElementById("exitCode");
+
+  const progressBar = document.getElementById("progressBar");
+  const progressText = document.getElementById("progressText");
+
+  const resultsSection = document.getElementById("resultsSection");
+  const resultsList = document.getElementById("resultsList");
+
+  const outputSection = document.getElementById("outputSection");
+  const rOutput = document.getElementById("rOutput");
+
+  const errorSection = document.getElementById("errorSection");
+  const rError = document.getElementById("rError");
+
+  function setStatus(element, message, type = "") {
+    element.textContent = message;
+    element.className = "status";
+    if (type) element.classList.add(type);
   }
 
-  function selectedStructure() {
-    return document.querySelector('input[name="structure"]:checked')?.value || 'none';
-  }
+  function updateInputStatus() {
+    const phenotype = phenotypeInput.files[0];
+    const genotype = genotypeInput.files[0];
 
-  function delimiter(text) {
-    const first = text.split(/\r?\n/).find(x => x.trim()) || '';
-    const counts = {
-      '\t': (first.match(/\t/g)||[]).length,
-      ',': (first.match(/,/g)||[]).length,
-      ';': (first.match(/;/g)||[]).length
-    };
-    return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0] || '\t';
-  }
-
-  function parseText(text) {
-    const d = delimiter(text);
-    const lines = text.split(/\r?\n/).filter(x => x.trim());
-    if (!lines.length) return [];
-    const header = lines[0].split(d).map(x => x.trim().replace(/^"|"$/g,''));
-    return lines.slice(1).map(line => {
-      const vals = line.split(d);
-      const row = {};
-      header.forEach((h,i) => row[h] = (vals[i] ?? '').trim().replace(/^"|"$/g,''));
-      return row;
-    });
-  }
-
-  async function readTable(file) {
-    if (!file) return [];
-    const name = file.name.toLowerCase();
-    if (name.endsWith('.vcf')) {
-      const txt = await file.text();
-      return parseText(txt.split(/\r?\n/).filter(x=>!x.startsWith('##')).join('\n'));
-    }
-    if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-      const data = await file.arrayBuffer();
-      const wb = XLSX.read(data, {type:'array'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      return XLSX.utils.sheet_to_json(ws, {defval:''});
-    }
-    return parseText(await file.text());
-  }
-
-  function numeric(v) {
-    if (v === null || v === undefined || v === '' || v === 'NA' || v === 'NaN' || v === '.') return NaN;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : NaN;
-  }
-
-  function firstKey(row, candidates) {
-    const keys = Object.keys(row || {});
-    for (const c of candidates) {
-      const k = keys.find(x => x.toLowerCase() === c.toLowerCase());
-      if (k) return k;
-    }
-    return keys[0];
-  }
-
-  function inferPhenotypeColumns(rows) {
-    if (!rows.length) return [];
-    const idKey = firstKey(rows[0], ['Taxa','Taxon','Accession','Accession_ID','ID','Sample','Genotype','Name']);
-    return Object.keys(rows[0]).filter(k => k !== idKey && rows.some(r => Number.isFinite(numeric(r[k]))));
-  }
-
-  function updateTraitSelector() {
-    const sel = $('gwasTrait');
-    sel.innerHTML = '';
-    state.phenotypeColumns.forEach(t => {
-      const o = document.createElement('option');
-      o.value = t; o.textContent = t;
-      sel.appendChild(o);
-    });
-    if (!state.phenotypeColumns.length) {
-      sel.innerHTML = '<option value="">No numeric phenotype traits detected</option>';
+    if (phenotype && genotype) {
+      setStatus(
+        inputStatus,
+        `Ready: ${phenotype.name} + ${genotype.name}`,
+        "success"
+      );
+    } else if (phenotype) {
+      setStatus(
+        inputStatus,
+        "Phenotype selected. Please select the genotype file."
+      );
+    } else if (genotype) {
+      setStatus(
+        inputStatus,
+        "Genotype selected. Please select the phenotype file."
+      );
+    } else {
+      setStatus(inputStatus, "Select both input files.");
     }
   }
 
-  function updateModelSummary() {
-    const models = selectedModels();
-    $('selectedModels').innerHTML =
-      '<div style="margin-top:14px">' +
-      (models.length ? models.map(m=>`<span class="badge">${m}</span>`).join(' ') : '<span class="note">Select at least one GWAS model.</span>') +
-      ` <span class="badge">Structure: ${selectedStructure()}</span></div>`;
-  }
-
-  async function loadInputs() {
+  async function loadRCode() {
     try {
-      state.phenotype = await readTable($('gwasPhenotype').files[0]);
-      state.genotype = await readTable($('gwasGenotype').files[0]);
-      state.map = await readTable($('gwasMap').files[0]);
-      state.kinship = $('gwasKinship').files[0] ? await readTable($('gwasKinship').files[0]) : null;
-      state.pc = $('gwasPC').files[0] ? await readTable($('gwasPC').files[0]) : null;
-      state.covariates = $('gwasCovariates').files[0] ? await readTable($('gwasCovariates').files[0]) : null;
+      setStatus(runStatus, "Loading R code...");
 
-      state.phenotypeColumns = inferPhenotypeColumns(state.phenotype);
-      updateTraitSelector();
+      const response = await fetch(`${API}/editor-code`);
 
-      $('gwasInputStatus').textContent =
-        `Phenotype: ${state.phenotype.length.toLocaleString()} rows; ` +
-        `Genotype: ${state.genotype.length.toLocaleString()} rows; ` +
-        `Map: ${state.map.length.toLocaleString()} rows.`;
-    } catch (e) {
-      console.error(e);
-      $('gwasInputStatus').textContent = 'Input error: ' + e.message;
-    }
-  }
-
-  function numericMatrix(rows) {
-    return rows.map(r => Object.values(r).map(numeric).filter(Number.isFinite));
-  }
-
-  // Front-end PCA preview. Final GWAS computation will use the supplied rMVP/MVP backend.
-  function runPCA() {
-    if (!state.genotype.length) return alert('Upload genotype data first.');
-    const vals = numericMatrix(state.genotype);
-    const points = vals.map((r,i)=>({
-      id: Object.values(state.genotype[i])[0] || `Sample_${i+1}`,
-      x: r[0] || 0,
-      y: r[1] || 0
-    }));
-    Plotly.newPlot('pcaPlot', [{
-      x: points.map(p=>p.x), y:points.map(p=>p.y), mode:'markers',
-      text:points.map(p=>p.id), hovertemplate:'%{text}<br>PC1: %{x}<br>PC2: %{y}<extra></extra>'
-    }], {
-      title:'PCA: PC1 vs PC2',
-      xaxis:{title:'PC1'}, yaxis:{title:'PC2'}, margin:{t:55,l:60,r:20,b:55}
-    }, {responsive:true});
-  }
-
-  function runKinship() {
-    if (!state.genotype.length) return alert('Upload genotype data first.');
-    const vals = numericMatrix(state.genotype).slice(0,80);
-    const n = vals.length;
-    const z = Array.from({length:n}, (_,i)=>Array.from({length:n},(_,j)=>{
-      const a=vals[i]||[], b=vals[j]||[];
-      const m=Math.min(a.length,b.length);
-      if (!m) return 0;
-      let s=0;
-      for(let k=0;k<m;k++) s += (a[k]||0)*(b[k]||0);
-      return s/m;
-    }));
-    Plotly.newPlot('kinshipPlot', [{
-      z, type:'heatmap', colorscale:'Viridis',
-      hovertemplate:'Row %{y}, Column %{x}<br>Relationship: %{z:.4f}<extra></extra>'
-    }], {
-      title:'Genomic Relationship / Kinship Heatmap',
-      xaxis:{title:'Individuals'}, yaxis:{title:'Individuals'}, margin:{t:55,l:60,r:20,b:55}
-    }, {responsive:true});
-  }
-
-  function runLD() {
-    if (!state.genotype.length) return alert('Upload genotype data first.');
-    const vals = numericMatrix(state.genotype);
-    const nMarkers = Math.max(2, Math.min(vals[0]?.length || 2, 500));
-    const x=[], y=[];
-    for(let d=1; d<Math.min(100,nMarkers); d++) {
-      let sum=0, count=0;
-      for(let i=0;i<vals.length;i++) {
-        const a=vals[i]?.[0], b=vals[i]?.[d];
-        if(Number.isFinite(a)&&Number.isFinite(b)){ sum += Math.abs(a-b); count++; }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
-      x.push(d); y.push(count ? Math.max(0,1-sum/(count*2)) : 0);
+
+      const code = await response.text();
+      codeEditor.value = code;
+
+      setStatus(
+        runStatus,
+        "Exact R code loaded successfully.",
+        "success"
+      );
+
+    } catch (error) {
+      setStatus(
+        runStatus,
+        `Could not load R code: ${error.message}`,
+        "error"
+      );
     }
-    Plotly.newPlot('ldPlot', [{
-      x,y,mode:'lines+markers', name:'LD'
-    }], {
-      title:'LD Decay',
-      xaxis:{title:'Marker distance (input-marker units)'},
-      yaxis:{title:'LD measure', rangemode:'tozero'},
-      margin:{t:55,l:60,r:20,b:55}
-    }, {responsive:true});
   }
 
-  function runGWAS() {
-    const models = selectedModels();
-    if (!state.phenotype.length || !state.genotype.length || !state.map.length)
-      return alert('Upload phenotype, genotype, and SNP map files first.');
-    if (!models.length) return alert('Select at least one GWAS model.');
-    const trait = $('gwasTrait').value;
-    if (!trait) return alert('Select a phenotype trait.');
+  function resetRunDisplay() {
+    runId.textContent = "—";
+    runTime.textContent = "—";
+    exitCode.textContent = "—";
 
-    // UI-ready placeholder until the rMVP/R backend is connected.
-    // Do not present placeholder values as real GWAS statistics.
-    state.gwasResults = [];
-    $('gwasResults').classList.remove('hidden');
-    $('gwasRunStatus').textContent =
-      `Configuration ready: ${models.join(', ')}; structure correction: ${selectedStructure()}; trait: ${trait}. ` +
-      'Connect the rMVP/MVP computation backend to generate association statistics.';
-    $('gwasTable').innerHTML =
-      '<div style="padding:16px">GWAS engine is configured and waiting for the rMVP/MVP computation backend. No fabricated P-values are shown.</div>';
-    $('downloadGWAS').disabled = true;
+    runState.textContent = "Starting";
+    progressBar.style.width = "5%";
+    progressText.textContent = "Sending the job to Ubuntu R...";
 
-    Plotly.newPlot('manhattanPlot', [], {
-      title:'Manhattan Plot — awaiting GWAS computation',
-      xaxis:{title:'Chromosome / position'}, yaxis:{title:'−log10(P)'},
-      margin:{t:55,l:60,r:20,b:55}
-    }, {responsive:true});
-    Plotly.newPlot('qqPlot', [], {
-      title:'Q-Q Plot — awaiting GWAS computation',
-      xaxis:{title:'Expected −log10(P)'}, yaxis:{title:'Observed −log10(P)'},
-      margin:{t:55,l:60,r:20,b:55}
-    }, {responsive:true});
+    resultsList.innerHTML = "";
+    resultsSection.style.display = "none";
+
+    rOutput.textContent = "";
+    outputSection.style.display = "none";
+
+    rError.textContent = "";
+    errorSection.style.display = "none";
   }
 
-  function downloadResults() {
-    if (!state.gwasResults.length) return;
-    const ws = XLSX.utils.json_to_sheet(state.gwasResults);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'GWAS Results');
-    XLSX.writeFile(wb, 'soybean_gwas_results.xlsx');
+  function showResults(data) {
+    if (!data.files || !data.files.length) {
+      resultsList.innerHTML = "<p>No result files were returned by R.</p>";
+      resultsSection.style.display = "block";
+      return;
+    }
+
+    resultsList.innerHTML = "";
+
+    data.files.forEach(file => {
+      const link = document.createElement("a");
+
+      link.className = "result-file";
+      link.href = `${API}${file.url}`;
+      link.target = "_blank";
+      link.rel = "noopener";
+
+      link.textContent =
+        `${file.name} (${Math.round(file.size / 1024)} KB)`;
+
+      resultsList.appendChild(link);
+    });
+
+    resultsSection.style.display = "block";
   }
 
-  ['gwasPhenotype','gwasGenotype','gwasMap','gwasKinship','gwasPC','gwasCovariates']
-    .forEach(id => $(id).addEventListener('change', loadInputs));
-  document.querySelectorAll('input[name="gwasModel"], input[name="structure"]')
-    .forEach(el => el.addEventListener('change', updateModelSummary));
-  $('runPCA').addEventListener('click', runPCA);
-  $('runKinship').addEventListener('click', runKinship);
-  $('runLD').addEventListener('click', runLD);
-  $('runGWAS').addEventListener('click', runGWAS);
-  $('downloadGWAS').addEventListener('click', downloadResults);
-  updateModelSummary();
+  async function runRCode() {
+    const phenotype = phenotypeInput.files[0];
+    const genotype = genotypeInput.files[0];
+    const code = codeEditor.value.trim();
+
+    if (!phenotype || !genotype) {
+      setStatus(
+        runStatus,
+        "Please select both phenotype and genotype files.",
+        "error"
+      );
+      return;
+    }
+
+    if (!code) {
+      setStatus(
+        runStatus,
+        "R code is empty. Load the R code first.",
+        "error"
+      );
+      return;
+    }
+
+    resetRunDisplay();
+
+    runButton.disabled = true;
+    loadCodeButton.disabled = true;
+
+    setStatus(
+      runStatus,
+      "R/rMVP is running. Please wait...",
+      "running"
+    );
+
+    let progress = 5;
+
+    const progressTimer = setInterval(() => {
+      if (progress < 90) {
+        progress += 2;
+        progressBar.style.width = `${progress}%`;
+      }
+    }, 700);
+
+    const formData = new FormData();
+
+    formData.append("phenotype", phenotype);
+    formData.append("genotype", genotype);
+    formData.append("code", new Blob([code], {
+      type: "text/plain"
+    }), "GWAS_R_EDITOR.R");
+
+    const startTime = performance.now();
+
+    try {
+      const response = await fetch(`${API}/run-r`, {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.status !== "ok") {
+        throw new Error(
+          data.error || `HTTP ${response.status}`
+        );
+      }
+
+      clearInterval(progressTimer);
+
+      progressBar.style.width = "100%";
+      progressText.textContent =
+        "R/rMVP completed successfully.";
+
+      runState.textContent = "Completed";
+      runId.textContent = data.run_id || "—";
+      runTime.textContent =
+        data.runtime_seconds != null
+          ? `${data.runtime_seconds} seconds`
+          : `${((performance.now() - startTime) / 1000).toFixed(1)} seconds`;
+
+      exitCode.textContent =
+        data.exit_code != null
+          ? data.exit_code
+          : "0";
+
+      setStatus(
+        runStatus,
+        `R/rMVP completed successfully in ${data.runtime_seconds} seconds.`,
+        "success"
+      );
+
+      showResults(data);
+
+      if (data.stdout) {
+        rOutput.textContent = data.stdout;
+        outputSection.style.display = "block";
+      }
+
+      if (data.stderr) {
+        rError.textContent = data.stderr;
+        errorSection.style.display = "block";
+      }
+
+    } catch (error) {
+      clearInterval(progressTimer);
+
+      progressBar.style.width = "100%";
+      progressText.textContent = "R execution failed.";
+
+      runState.textContent = "Error";
+
+      setStatus(
+        runStatus,
+        `R execution failed: ${error.message}`,
+        "error"
+      );
+
+    } finally {
+      runButton.disabled = false;
+      loadCodeButton.disabled = false;
+    }
+  }
+
+  phenotypeInput.addEventListener("change", updateInputStatus);
+  genotypeInput.addEventListener("change", updateInputStatus);
+
+  loadCodeButton.addEventListener("click", loadRCode);
+  runButton.addEventListener("click", runRCode);
+
+  loadRCode();
+
 })();

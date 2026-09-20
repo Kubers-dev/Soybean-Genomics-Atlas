@@ -4,125 +4,386 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Soybean Genomics Atlas — GWAS Analysis</title>
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <style>
-:root { --border:#d9e1e7; --muted:#5f6b73; --panel:#fff; --bg:#f7f9fb; --accent:#315f8c; }
-* { box-sizing:border-box; }
-body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--bg); color:#17212b; }
-.gwas-wrap { max-width:1400px; margin:0 auto; padding:28px; }
-.gwas-title { margin-bottom:6px; font-size:30px; }
-.gwas-subtitle { color:var(--muted); margin-bottom:24px; }
-.gwas-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:18px; }
-.gwas-card h2 { margin:0 0 8px; font-size:20px; }
-.gwas-help { color:var(--muted); font-size:14px; margin:0 0 16px; }
-.gwas-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
-.gwas-field label { display:block; font-weight:600; margin-bottom:7px; }
-.gwas-field input[type=file], .gwas-field select, .gwas-field input[type=number] {
- width:100%; padding:9px; border:1px solid #c9d3da; border-radius:7px; background:white;
+:root {
+  --border:#d9e1e7;
+  --muted:#5f6b73;
+  --panel:#ffffff;
+  --bg:#f7f9fb;
+  --accent:#315f8c;
+  --success:#247a45;
+  --error:#a52828;
 }
-.choice-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; }
-.choice { border:1px solid var(--border); border-radius:9px; padding:13px; cursor:pointer; background:#fff; }
-.choice:hover { border-color:var(--accent); }
-.choice input { margin-right:8px; }
-.actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
-button { border:1px solid #294e73; background:#315f8c; color:white; padding:11px 17px; border-radius:7px; cursor:pointer; font-weight:600; }
-button.secondary { background:white; color:#294e73; }
-button:disabled { opacity:.5; cursor:not-allowed; }
-.status { margin-top:12px; padding:10px; border-radius:7px; background:#f0f4f7; color:#44515b; }
-.plot { min-height:420px; border:1px solid var(--border); border-radius:10px; background:#fff; margin-top:12px; }
-.table-wrap { overflow:auto; max-height:420px; border:1px solid var(--border); border-radius:8px; }
-table { width:100%; border-collapse:collapse; font-size:13px; }
-th,td { padding:8px 10px; border-bottom:1px solid #e5eaee; text-align:left; white-space:nowrap; }
-th { background:#f4f7f9; position:sticky; top:0; }
-.note { font-size:13px; color:var(--muted); }
-.hidden { display:none !important; }
-.badge { display:inline-block; padding:4px 8px; border-radius:20px; background:#edf3f8; color:#315f8c; font-size:12px; margin:2px; }
+
+* { box-sizing:border-box; }
+
+body {
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:var(--bg);
+  color:#17212b;
+}
+
+.gwas-wrap {
+  max-width:1400px;
+  margin:0 auto;
+  padding:28px;
+}
+
+.gwas-title {
+  margin-bottom:6px;
+  font-size:30px;
+}
+
+.gwas-subtitle {
+  color:var(--muted);
+  margin-bottom:24px;
+}
+
+.gwas-card {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  margin-bottom:18px;
+}
+
+.gwas-card h2 {
+  margin:0 0 8px;
+  font-size:20px;
+}
+
+.gwas-help {
+  color:var(--muted);
+  font-size:14px;
+  margin:0 0 16px;
+}
+
+.gwas-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:16px;
+}
+
+.gwas-field label {
+  display:block;
+  font-weight:600;
+  margin-bottom:7px;
+}
+
+.gwas-field input[type=file] {
+  width:100%;
+  padding:9px;
+  border:1px solid #c9d3da;
+  border-radius:7px;
+  background:white;
+}
+
+.actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:18px;
+}
+
+button {
+  border:1px solid #294e73;
+  background:#315f8c;
+  color:white;
+  padding:11px 18px;
+  border-radius:7px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+button.secondary {
+  background:white;
+  color:#294e73;
+}
+
+button:disabled {
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.status {
+  margin-top:12px;
+  padding:12px;
+  border-radius:7px;
+  background:#f0f4f7;
+  color:#44515b;
+}
+
+.status.running {
+  background:#fff7df;
+  color:#775800;
+}
+
+.status.success {
+  background:#eaf7ee;
+  color:var(--success);
+}
+
+.status.error {
+  background:#fbecec;
+  color:var(--error);
+}
+
+.r-editor {
+  width:100%;
+  min-height:600px;
+  resize:vertical;
+  padding:16px;
+  border:1px solid #c9d3da;
+  border-radius:8px;
+  background:#111820;
+  color:#e8edf2;
+  font-family:"Courier New",monospace;
+  font-size:13px;
+  line-height:1.5;
+}
+
+.run-info {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px;
+  margin-top:16px;
+}
+
+.info-box {
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:12px;
+  background:#fafcfd;
+}
+
+.info-label {
+  color:var(--muted);
+  font-size:12px;
+  margin-bottom:5px;
+}
+
+.info-value {
+  font-weight:700;
+}
+
+.progress {
+  width:100%;
+  height:10px;
+  background:#e6ebef;
+  border-radius:20px;
+  overflow:hidden;
+  margin-top:15px;
+}
+
+.progress-bar {
+  width:0%;
+  height:100%;
+  background:#315f8c;
+  transition:width .5s ease;
+}
+
+.results-list {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:10px;
+  margin-top:15px;
+}
+
+.result-file {
+  display:block;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:#fff;
+  color:#315f8c;
+  text-decoration:none;
+  font-weight:600;
+}
+
+.result-file:hover {
+  border-color:#315f8c;
+  background:#f5f9fc;
+}
+
+pre {
+  white-space:pre-wrap;
+  word-break:break-word;
+  background:#111820;
+  color:#dce5ec;
+  padding:16px;
+  border-radius:8px;
+  max-height:500px;
+  overflow:auto;
+  font-size:12px;
+  line-height:1.45;
+}
+
+.note {
+  color:var(--muted);
+  font-size:13px;
+}
 </style>
 </head>
+
 <body>
+
 <div class="gwas-wrap">
+
   <h1 class="gwas-title">GWAS Analysis</h1>
-  <p class="gwas-subtitle">Phenotype–genotype association analysis with selectable GLM, MLM, and FarmCPU approaches.</p>
 
+  <p class="gwas-subtitle">
+    R/rMVP-based genome-wide association analysis.
+    All GWAS calculations are performed by R in the background.
+  </p>
+
+  <!-- INPUT FILES -->
   <section class="gwas-card">
-    <h2>1. Data Input</h2>
-    <p class="gwas-help">Upload the phenotype, genotype, and SNP map required for GWAS. Optional population-structure files can also be supplied.</p>
+
+    <h2>1. Input Files</h2>
+
+    <p class="gwas-help">
+      Select the phenotype and genotype files. The files are passed directly
+      to the R GWAS pipeline.
+    </p>
+
     <div class="gwas-grid">
-      <div class="gwas-field"><label for="gwasPhenotype">Phenotype file *</label><input id="gwasPhenotype" type="file" accept=".csv,.txt,.tsv,.xlsx,.xls"></div>
-      <div class="gwas-field"><label for="gwasGenotype">Genotype file *</label><input id="gwasGenotype" type="file" accept=".csv,.txt,.tsv,.xlsx,.xls,.vcf"></div>
-      <div class="gwas-field"><label for="gwasMap">SNP map file *</label><input id="gwasMap" type="file" accept=".csv,.txt,.tsv,.xlsx,.xls"></div>
-      <div class="gwas-field"><label for="gwasKinship">Optional kinship matrix</label><input id="gwasKinship" type="file" accept=".csv,.txt,.tsv,.xlsx,.xls"></div>
-      <div class="gwas-field"><label for="gwasPC">Optional PCA/PC file</label><input id="gwasPC" type="file" accept=".csv,.txt,.tsv,.xlsx,.xls"></div>
-      <div class="gwas-field"><label for="gwasCovariates">Optional covariates</label><input id="gwasCovariates" type="file" accept=".csv,.txt,.tsv,.xlsx,.xls"></div>
+
+      <div class="gwas-field">
+        <label for="gwasPhenotype">Phenotype file</label>
+        <input
+          id="gwasPhenotype"
+          type="file"
+          accept=".csv,.txt,.tsv,.xlsx,.xls">
+      </div>
+
+      <div class="gwas-field">
+        <label for="gwasGenotype">Genotype / HapMap file</label>
+        <input
+          id="gwasGenotype"
+          type="file"
+          accept=".hmp.txt,.txt,.csv,.tsv">
+      </div>
+
     </div>
-    <div id="gwasInputStatus" class="status">Waiting for input files.</div>
+
+    <div id="gwasInputStatus" class="status">
+      Select both input files.
+    </div>
+
   </section>
 
-  <section class="gwas-card">
-    <h2>2. Select GWAS Approach</h2>
-    <p class="gwas-help">Select one, two, or all three models. Only selected models will be run.</p>
-    <div class="choice-grid">
-      <label class="choice"><input type="checkbox" name="gwasModel" value="GLM" checked><strong>GLM</strong><br><span class="note">General Linear Model</span></label>
-      <label class="choice"><input type="checkbox" name="gwasModel" value="MLM"><strong>MLM</strong><br><span class="note">Mixed Linear Model</span></label>
-      <label class="choice"><input type="checkbox" name="gwasModel" value="FarmCPU"><strong>FarmCPU</strong><br><span class="note">Fixed and random-effect iterative model</span></label>
-    </div>
-  </section>
 
+  <!-- R CODE -->
   <section class="gwas-card">
-    <h2>3. Population Structure / Relatedness</h2>
-    <p class="gwas-help">Choose how population structure and relatedness are incorporated into the selected GWAS models.</p>
-    <div class="choice-grid">
-      <label class="choice"><input type="radio" name="structure" value="none" checked><strong>No correction</strong></label>
-      <label class="choice"><input type="radio" name="structure" value="PCA"><strong>PCA</strong><br><span class="note">Principal-component covariates</span></label>
-      <label class="choice"><input type="radio" name="structure" value="Kinship"><strong>Kinship (K)</strong><br><span class="note">Genomic relationship matrix</span></label>
-      <label class="choice"><input type="radio" name="structure" value="PCA+Kinship"><strong>PCA + Kinship</strong><br><span class="note">PC covariates plus K where supported</span></label>
-    </div>
-    <div class="gwas-grid" style="margin-top:16px">
-      <div class="gwas-field"><label for="gwasNPCGLM">PCs for GLM</label><input id="gwasNPCGLM" type="number" min="0" value="5"></div>
-      <div class="gwas-field"><label for="gwasNPCMLM">PCs for MLM</label><input id="gwasNPCMLM" type="number" min="0" value="3"></div>
-      <div class="gwas-field"><label for="gwasNPCFarm">PCs for FarmCPU</label><input id="gwasNPCFarm" type="number" min="0" value="3"></div>
-      <div class="gwas-field"><label for="gwasThreshold">Significance threshold</label><input id="gwasThreshold" type="number" min="0" max="1" step="0.000001" value="0.05"></div>
-      <div class="gwas-field"><label for="gwasMaxLine">Markers processed at a time</label><input id="gwasMaxLine" type="number" min="100" value="10000"></div>
-    </div>
-  </section>
 
-  <section class="gwas-card">
-    <h2>4. Population Genetics</h2>
-    <p class="gwas-help">These analyses are generated from the genotype data independently of the selected GWAS model.</p>
+    <h2>2. R Code</h2>
+
+    <p class="gwas-help">
+      This is the R code that will be executed by Ubuntu R/Rscript.
+      The website does not perform GWAS calculations.
+    </p>
+
+    <textarea id="rCodeEditor" class="r-editor"
+      spellcheck="false"></textarea>
+
     <div class="actions">
-      <button id="runPCA">Generate PCA</button>
-      <button id="runKinship" class="secondary">Generate Kinship</button>
-      <button id="runLD" class="secondary">Generate LD Decay</button>
+
+      <button id="loadRCode" class="secondary">
+        Reload R Code
+      </button>
+
+      <button id="runGWAS">
+        RUN R CODE
+      </button>
+
     </div>
-    <div id="pcaPlot" class="plot"></div>
-    <div id="kinshipPlot" class="plot"></div>
-    <div id="ldPlot" class="plot"></div>
+
+    <div id="gwasRunStatus" class="status">
+      R code has not been executed.
+    </div>
+
   </section>
 
+
+  <!-- RUNTIME -->
   <section class="gwas-card">
-    <h2>5. Trait Selection & GWAS</h2>
-    <div class="gwas-grid">
-      <div class="gwas-field"><label for="gwasTrait">Phenotype trait</label><select id="gwasTrait"><option value="">Upload phenotype file first</option></select></div>
+
+    <h2>3. R Execution</h2>
+
+    <div class="run-info">
+
+      <div class="info-box">
+        <div class="info-label">STATUS</div>
+        <div id="runState" class="info-value">Waiting</div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-label">RUN ID</div>
+        <div id="runId" class="info-value">—</div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-label">RUNTIME</div>
+        <div id="runTime" class="info-value">—</div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-label">EXIT CODE</div>
+        <div id="exitCode" class="info-value">—</div>
+      </div>
+
     </div>
-    <div id="selectedModels"></div>
-    <div class="actions">
-      <button id="runGWAS">Run Selected GWAS Models</button>
-      <button id="downloadGWAS" class="secondary" disabled>Download GWAS Results (.xlsx)</button>
+
+    <div class="progress">
+      <div id="progressBar" class="progress-bar"></div>
     </div>
-    <div id="gwasRunStatus" class="status">GWAS has not been run.</div>
+
+    <p id="progressText" class="note">
+      Waiting for an R job.
+    </p>
+
   </section>
 
-  <section id="gwasResults" class="gwas-card hidden">
-    <h2>6. GWAS Results</h2>
-    <div class="gwas-grid">
-      <div><h3>Manhattan Plot</h3><div id="manhattanPlot" class="plot"></div></div>
-      <div><h3>Q-Q Plot</h3><div id="qqPlot" class="plot"></div></div>
-    </div>
-    <h3>Significant SNPs / Results</h3>
-    <div id="gwasTable" class="table-wrap"></div>
+
+  <!-- RESULTS -->
+  <section id="resultsSection" class="gwas-card" style="display:none;">
+
+    <h2>4. R-Generated Results</h2>
+
+    <p class="gwas-help">
+      These files were generated by rMVP/R. The website does not calculate
+      or modify the results.
+    </p>
+
+    <div id="resultsList" class="results-list"></div>
+
   </section>
+
+
+  <!-- R OUTPUT -->
+  <section id="outputSection" class="gwas-card" style="display:none;">
+
+    <h2>5. R Console Output</h2>
+
+    <pre id="rOutput"></pre>
+
+  </section>
+
+
+  <!-- R ERRORS / WARNINGS -->
+  <section id="errorSection" class="gwas-card" style="display:none;">
+
+    <h2>6. R Messages</h2>
+
+    <pre id="rError"></pre>
+
+  </section>
+
 </div>
-<script src="js/gwas-analysis.js?v=1"></script>
+
+<script src="js/gwas-analysis.js?v=2"></script>
+
 </body>
 </html>
