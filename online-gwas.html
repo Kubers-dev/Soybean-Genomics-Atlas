@@ -226,6 +226,16 @@ button:disabled {
 }
 
 </style>
+
+<style>
+.online-gwas-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+</style>
+
 </head>
 
 <body>
@@ -293,9 +303,15 @@ FarmCPU
 
 </div>
 
+<div class="online-gwas-actions">
 <button id="localRBtn" type="button">
 DOWNLOAD LOCAL R GWAS PACKAGE
 </button>
+
+<button id="runRBtn" type="button">
+RUN R CODE
+</button>
+</div>
 
 </div>
 

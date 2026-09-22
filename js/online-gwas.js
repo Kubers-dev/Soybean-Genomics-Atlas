@@ -565,4 +565,24 @@ They are not uploaded to a cloud GWAS server by this package.
     }
   };
 
+
+  const runRButton =
+    document.getElementById("runRBtn");
+
+  if (runRButton) {
+    runRButton.onclick = () => {
+
+      const status =
+        document.getElementById("status");
+
+      status.className = "status success";
+
+      status.textContent =
+        "The local R workflow is ready. " +
+        "Download the package, extract it, and double-click " +
+        "RUN_GWAS.bat to execute the GWAS with R.";
+
+    };
+  }
+
 })();
