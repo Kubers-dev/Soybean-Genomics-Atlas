@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: soybean-online-gwas
+    runtime: docker
+    rootDir: online-gwas-backend
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8000"
