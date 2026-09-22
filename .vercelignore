@@ -1,0 +1,44 @@
+# Git and Vercel local metadata
+.git
+.vercel
+
+# Local GWAS runtime/test data
+gwas_runs/
+rMVP_GWAS_RESULTS/
+rMVP_GWAS_RESULTS_TEST/
+
+# Online GWAS runtime data generated during local testing
+online-gwas-module/online-gwas-backend/runs/
+
+# Local GWAS test inputs/scripts
+phenotype_Count_GWAS_FIXED.xlsx
+run_gwas.R
+gwas_backend.R.before-*
+js/*.before-*
+phenotype-analysis.html.before-*
+
+# Backups / archives
+online-gwas-module.zip
+
+# Soybean genome source/build files not required by the browser
+data/a6/*.fna.gz
+data/a6/*.faa.gz
+data/a6/*.gff3.gz
+
+# Gene Explorer backup data
+data/a6/sequences.genomic-only-backup/
+
+# Local build/cache files
+data/a6/__pycache__/
+data/a6/*.py
+data/a6/*.py.backup
+
+# Local/legacy GWAS development files
+GWAS_R_EDITOR.R
+gwas_server.py
+gwas_backend.R
+gwas_server.log
+test_phenotype.csv
+
+# Old HTML backups
+index.html.before-*
