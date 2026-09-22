@@ -64,18 +64,40 @@
     try {
       setStatus(runStatus, "Loading R code...");
 
-      const response = await fetch(`${API}/editor-code`);
+      // First try the local Ubuntu R bridge.
+      try {
+        const response = await fetch(`${API}/editor-code`);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        if (response.ok) {
+          const code = await response.text();
+          codeEditor.value = code;
+
+          setStatus(
+            runStatus,
+            "Exact R code loaded from Ubuntu R bridge.",
+            "success"
+          );
+          return;
+        }
+      } catch (bridgeError) {
+        console.log("Ubuntu R bridge unavailable; loading local R code.");
       }
 
-      const code = await response.text();
+      // Public GitHub Pages fallback.
+      const localResponse = await fetch("GWAS_R_EDITOR.R");
+
+      if (!localResponse.ok) {
+        throw new Error(
+          `Could not load GWAS_R_EDITOR.R (HTTP ${localResponse.status})`
+        );
+      }
+
+      const code = await localResponse.text();
       codeEditor.value = code;
 
       setStatus(
         runStatus,
-        "Exact R code loaded successfully.",
+        "Exact R code loaded from GWAS_R_EDITOR.R.",
         "success"
       );
 
