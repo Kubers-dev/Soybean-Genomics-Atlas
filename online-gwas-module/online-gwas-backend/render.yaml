@@ -5,6 +5,4 @@ services:
     rootDir: online-gwas-backend
     plan: starter
     healthCheckPath: /health
-    envVars:
-      - key: PORT
-        value: "8000"
+    envVars: []
