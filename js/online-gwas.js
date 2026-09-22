@@ -2,7 +2,7 @@
 
   const API_BASE =
     window.ONLINE_GWAS_API ||
-    "http://localhost:8000";
+    "";
 
   const $ = id =>
     document.getElementById(id);
