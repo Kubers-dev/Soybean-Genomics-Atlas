@@ -158,6 +158,12 @@
   async function runRCode() {
     const phenotype = phenotypeInput.files[0];
     const genotype = genotypeInput.files[0];
+
+    // Make sure the exact R code is loaded before running.
+    if (!codeEditor.value.trim()) {
+      await loadRCode();
+    }
+
     const code = codeEditor.value.trim();
 
     if (!phenotype || !genotype) {
