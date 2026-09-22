@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Online GWAS | Soybean Genomics Atlas</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f5f7fa;
+      color: #222;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #ddd;
+      padding: 20px 40px;
+    }
+
+    header h1 {
+      margin: 0 0 6px 0;
+      font-size: 28px;
+    }
+
+    header p {
+      margin: 0;
+      color: #666;
+    }
+
+    nav {
+      margin-top: 18px;
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: #2563eb;
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 35px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .description {
+      color: #555;
+      line-height: 1.6;
+    }
+
+    .file-row {
+      margin: 20px 0;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      background: #fafafa;
+    }
+
+    button {
+      padding: 13px 24px;
+      border: 0;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 18px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f3f4f6;
+      color: #444;
+    }
+
+    .results {
+      display: none;
+    }
+
+    .results a {
+      display: block;
+      margin: 10px 0;
+      color: #2563eb;
+      font-weight: 600;
+    }
+
+    .warning {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      color: #9a3412;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+
+  <h1>Soybean Genomics Atlas</h1>
+  <p>Online GWAS</p>
+
+  <nav>
+    <a href="index.html">Gene Explorer</a>
+    <a href="phenotype-analysis.html">Phenotype &amp; GWAS Analysis</a>
+    <a href="gwas-analysis.html">GWAS Analysis</a>
+    <a href="online-gwas.html">Online GWAS</a>
+  </nav>
+
+</header>
+
+<main>
+
+  <section class="card">
+
+    <h2>Online GWAS</h2>
+
+    <p class="description">
+      Run soybean genome-wide association analysis using your own phenotype
+      and genotype files. No local installation of R, rMVP, Python, or Ubuntu
+      will be required when the cloud backend is connected.
+    </p>
+
+  </section>
+
+  <section class="card">
+
+    <h2>1. Input Files</h2>
+
+    <div class="file-row">
+      <label for="onlinePhenotype">
+        Phenotype File
+      </label>
+
+      <input
+        id="onlinePhenotype"
+        type="file"
+        accept=".csv,.xlsx,.xls,.txt"
+      >
+    </div>
+
+    <div class="file-row">
+      <label for="onlineGenotype">
+        Genotype File
+      </label>
+
+      <input
+        id="onlineGenotype"
+        type="file"
+        accept=".hmp,.txt,.csv"
+      >
+    </div>
+
+    <button id="runOnlineGWAS">
+      RUN GWAS
+    </button>
+
+    <div id="onlineStatus" class="status">
+      Select your phenotype and genotype files.
+    </div>
+
+    <div class="warning">
+      Your files will be processed by the Online GWAS backend.
+      The cloud R/rMVP backend will be connected separately.
+    </div>
+
+  </section>
+
+  <section id="onlineResults" class="card results">
+
+    <h2>GWAS Results</h2>
+
+    <div id="onlineResultsList"></div>
+
+  </section>
+
+</main>
+
+<script src="js/online-gwas.js"></script>
+
+</body>
+</html>

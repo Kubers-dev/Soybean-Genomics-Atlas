@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: soybean-atlas-online-gwas
+    runtime: docker
+    dockerfilePath: ./online-gwas-backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    plan: starter
