@@ -285,19 +285,30 @@ pre {
       The website does not perform GWAS calculations.
     </p>
 
-    <textarea id="rCodeEditor" class="r-editor"
-      spellcheck="false"></textarea>
+    <details class="r-code-panel">
+      <summary>
+        <strong>▶ Show / Edit R Code</strong>
+        <span>Click to view or edit the R script</span>
+      </summary>
+
+      <div class="r-code-content">
+
+        <textarea id="rCodeEditor" class="r-editor"
+          spellcheck="false"></textarea>
+
+        <div class="actions">
+          <button id="loadRCode" class="secondary">
+            Reload R Code
+          </button>
+        </div>
+
+      </div>
+    </details>
 
     <div class="actions">
-
-      <button id="loadRCode" class="secondary">
-        Reload R Code
-      </button>
-
       <button id="runGWAS">
         RUN R CODE
       </button>
-
     </div>
 
     <div id="gwasRunStatus" class="status">
