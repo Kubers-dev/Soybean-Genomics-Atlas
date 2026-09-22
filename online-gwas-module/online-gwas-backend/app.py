@@ -29,6 +29,7 @@ CORS(app)
 
 
 @app.get("/health")
+@app.get("/api/gwas/health")
 def health():
     return jsonify(
         status="ok",
