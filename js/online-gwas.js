@@ -570,18 +570,162 @@ They are not uploaded to a cloud GWAS server by this package.
     document.getElementById("runRBtn");
 
   if (runRButton) {
-    runRButton.onclick = () => {
+    runRButton.onclick = async () => {
 
       const status =
         document.getElementById("status");
 
-      status.className = "status success";
+      const phenotypeInput =
+        document.getElementById("phenotype");
 
+      const genotypeInput =
+        document.getElementById("genotype");
+
+      if (!phenotypeInput || !phenotypeInput.files.length) {
+        status.className = "status error";
+        status.textContent =
+          "Please select a phenotype file first.";
+        return;
+      }
+
+      if (!genotypeInput || !genotypeInput.files.length) {
+        status.className = "status error";
+        status.textContent =
+          "Please select a HapMap genotype file first.";
+        return;
+      }
+
+      runRButton.disabled = true;
+      status.className = "status";
       status.textContent =
-        "The local R workflow is ready. " +
-        "Download the package, extract it, and double-click " +
-        "RUN_GWAS.bat to execute the GWAS with R.";
+        "Checking the local R launcher...";
 
+      try {
+
+        const healthResponse =
+          await fetch(
+            "http://127.0.0.1:8766/health",
+            {
+              method: "GET",
+              cache: "no-store"
+            }
+          );
+
+        if (!healthResponse.ok) {
+          throw new Error(
+            "Local R launcher is not responding."
+          );
+        }
+
+        const health =
+          await healthResponse.json();
+
+        if (!health.r_script || !health.rscript) {
+          throw new Error(
+            "The local R launcher or Rscript is unavailable."
+          );
+        }
+
+        status.className = "status";
+        status.textContent =
+          "R launcher connected. Starting GWAS...";
+
+        const codeResponse =
+          await fetch(
+            "https://raw.githubusercontent.com/Kubers-dev/Soybean-Genomics-Atlas/main/GWAS_R_EDITOR.R",
+            {
+              cache: "no-store"
+            }
+          );
+
+        if (!codeResponse.ok) {
+          throw new Error(
+            "Could not load the master GWAS R code."
+          );
+        }
+
+        const masterR =
+          await codeResponse.text();
+
+        const formData =
+          new FormData();
+
+        formData.append(
+          "phenotype",
+          phenotypeInput.files[0]
+        );
+
+        formData.append(
+          "genotype",
+          genotypeInput.files[0]
+        );
+
+        formData.append(
+          "code",
+          new Blob(
+            [masterR],
+            { type: "text/plain" }
+          ),
+          "GWAS_R_EDITOR.R"
+        );
+
+        status.textContent =
+          "GWAS is running in local R. " +
+          "Please wait...";
+
+        const runResponse =
+          await fetch(
+            "http://127.0.0.1:8766/run-r",
+            {
+              method: "POST",
+              body: formData
+            }
+          );
+
+        const result =
+          await runResponse.json();
+
+        if (!runResponse.ok ||
+            result.status !== "ok") {
+
+          throw new Error(
+            result.error ||
+            result.stderr ||
+            "R GWAS execution failed."
+          );
+        }
+
+        status.className =
+          "status success";
+
+        status.textContent =
+          "GWAS completed successfully in " +
+          result.runtime_seconds +
+          " seconds. " +
+          result.files.length +
+          " result files were generated.";
+
+        console.log(
+          "Online GWAS result:",
+          result
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        status.className =
+          "status error";
+
+        status.textContent =
+          "Online GWAS failed: " +
+          error.message;
+
+      } finally {
+
+        runRButton.disabled = false;
+
+      }
     };
   }
 
