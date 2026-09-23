@@ -598,13 +598,13 @@ They are not uploaded to a cloud GWAS server by this package.
       runRButton.disabled = true;
       status.className = "status";
       status.textContent =
-        "Checking the local R launcher...";
+        "Connecting to the Online GWAS server...";
 
       try {
 
         const healthResponse =
           await fetch(
-            "http://127.0.0.1:8766/health",
+            "https://soybean-genomics-atlas.vercel.app/api/gwas/health",
             {
               method: "GET",
               cache: "no-store"
@@ -613,7 +613,7 @@ They are not uploaded to a cloud GWAS server by this package.
 
         if (!healthResponse.ok) {
           throw new Error(
-            "Local R launcher is not responding."
+            "Online GWAS server is not responding."
           );
         }
 
@@ -622,13 +622,13 @@ They are not uploaded to a cloud GWAS server by this package.
 
         if (!health.r_script || !health.rscript) {
           throw new Error(
-            "The local R launcher or Rscript is unavailable."
+            "The Online GWAS server or Rscript is unavailable."
           );
         }
 
         status.className = "status";
         status.textContent =
-          "R launcher connected. Starting GWAS...";
+          "Online GWAS server connected. Starting GWAS...";
 
         const codeResponse =
           await fetch(
@@ -670,12 +670,12 @@ They are not uploaded to a cloud GWAS server by this package.
         );
 
         status.textContent =
-          "GWAS is running in local R. " +
+          "GWAS is running on the Online GWAS server. " +
           "Please wait...";
 
         const runResponse =
           await fetch(
-            "http://127.0.0.1:8766/run-r",
+            "https://soybean-genomics-atlas.vercel.app/api/gwas/run-r",
             {
               method: "POST",
               body: formData
