@@ -10,3 +10,21 @@ data/a6/*.gff3.gz
 __pycache__/
 *.pyc
 .DS_Store
+
+# Online GWAS runtime/test outputs
+online-gwas-module/online-gwas-backend/runs/
+online-gwas-module/online-gwas-backend/*.before-*
+online-gwas-module/js/*.before-*
+online-gwas-module/*.before-*
+online-gwas-module.zip
+
+# Local GWAS runtime/test outputs
+gwas_runs/
+gwas_server.log
+rMVP_GWAS_RESULTS/
+rMVP_GWAS_RESULTS_TEST/
+phenotype_Count_GWAS_FIXED.xlsx
+run_gwas.R
+gwas_backend.R.before-*
+js/*.before-*
+phenotype-analysis.html.before-*

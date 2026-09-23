@@ -1,221 +1,358 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Online GWAS | Soybean Genomics Atlas</title>
+<title>Online GWAS | Soybean Genomics Atlas</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f5f7fa;
-      color: #222;
-    }
+<style>
 
-    header {
-      background: #ffffff;
-      border-bottom: 1px solid #ddd;
-      padding: 20px 40px;
-    }
+* {
+  box-sizing: border-box;
+}
 
-    header h1 {
-      margin: 0 0 6px 0;
-      font-size: 28px;
-    }
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f5f7fa;
+  color: #222;
+}
 
-    header p {
-      margin: 0;
-      color: #666;
-    }
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 30px 20px 60px;
+}
 
-    nav {
-      margin-top: 18px;
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
+h1 {
+  margin-bottom: 6px;
+}
 
-    nav a {
-      text-decoration: none;
-      color: #2563eb;
-      font-weight: 600;
-    }
+.subtitle {
+  color: #666;
+  margin-top: 0;
+}
 
-    main {
-      max-width: 1100px;
-      margin: 35px auto;
-      padding: 0 20px;
-    }
+.card {
+  background: #fff;
+  border: 1px solid #dfe3e8;
+  border-radius: 12px;
+  padding: 22px;
+  margin: 18px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
 
-    .card {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      padding: 25px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
+.card h2 {
+  margin-top: 0;
+}
 
-    h2 {
-      margin-top: 0;
-    }
+label {
+  display: block;
+  font-weight: 600;
+  margin: 14px 0 7px;
+}
 
-    .description {
-      color: #555;
-      line-height: 1.6;
-    }
+input[type=file] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  background: #fff;
+}
 
-    .file-row {
-      margin: 20px 0;
-    }
+.model-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
 
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
+.model-option {
+  border: 1px solid #d6dbe1;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-weight: 600;
+}
 
-    input[type="file"] {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-sizing: border-box;
-      background: #fafafa;
-    }
+button {
+  margin-top: 20px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 7px;
+  background: #1769aa;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
 
-    button {
-      padding: 13px 24px;
-      border: 0;
-      border-radius: 8px;
-      background: #2563eb;
-      color: white;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
+button:hover {
+  opacity: .92;
+}
 
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
 
-    .status {
-      margin-top: 18px;
-      padding: 12px;
-      border-radius: 8px;
-      background: #f3f4f6;
-      color: #444;
-    }
+.status {
+  padding: 14px;
+  border-radius: 8px;
+  background: #eef1f4;
+  white-space: pre-wrap;
+}
 
-    .results {
-      display: none;
-    }
+.error {
+  background: #ffe8e8;
+  color: #9b111e;
+}
 
-    .results a {
-      display: block;
-      margin: 10px 0;
-      color: #2563eb;
-      font-weight: 600;
-    }
+.success {
+  background: #e8f7ed;
+  color: #176b35;
+}
 
-    .warning {
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      padding: 15px;
-      border-radius: 8px;
-      margin-top: 20px;
-      color: #9a3412;
-    }
-  </style>
+.small {
+  color: #666;
+  font-size: .9em;
+  line-height: 1.5;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.summary-box {
+  background: #f7f9fb;
+  border: 1px solid #e1e5e9;
+  border-radius: 9px;
+  padding: 16px;
+}
+
+.summary-label {
+  font-size: .82em;
+  color: #666;
+}
+
+.summary-value {
+  font-size: 1.35em;
+  font-weight: 700;
+  margin-top: 5px;
+}
+
+.trait-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.trait-table th,
+.trait-table td {
+  border-bottom: 1px solid #e5e8eb;
+  padding: 10px;
+  text-align: left;
+}
+
+.trait-table th {
+  background: #f5f7f9;
+}
+
+.completed {
+  color: #176b35;
+  font-weight: 700;
+}
+
+.failed {
+  color: #a31515;
+  font-weight: 700;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.result-group {
+  border: 1px solid #e1e5e9;
+  border-radius: 9px;
+  padding: 16px;
+}
+
+.result-group h3 {
+  margin-top: 0;
+}
+
+.result-link {
+  display: block;
+  padding: 8px 0;
+  color: #1769aa;
+  text-decoration: none;
+}
+
+.result-link:hover {
+  text-decoration: underline;
+}
+
+.plot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.plot-card {
+  border: 1px solid #e1e5e9;
+  border-radius: 9px;
+  padding: 12px;
+  background: #fff;
+}
+
+.plot-card img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.plot-title {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+</style>
+
+<style>
+.online-gwas-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+</style>
+
 </head>
 
 <body>
 
-<header>
+<div class="container">
 
-  <h1>Soybean Genomics Atlas</h1>
-  <p>Online GWAS</p>
+<h1>Online GWAS</h1>
 
-  <nav>
-    <a href="index.html">Gene Explorer</a>
-    <a href="phenotype-analysis.html">Phenotype &amp; GWAS Analysis</a>
-    <a href="gwas-analysis.html">GWAS Analysis</a>
-    <a href="online-gwas.html">Online GWAS</a>
-  </nav>
+<p class="subtitle">
+Local rMVP genome-wide association analysis using your computer's R environment.
+and HapMap genotype data.
+</p>
 
-</header>
+<div class="card">
 
-<main>
+<h2>1. Input files</h2>
 
-  <section class="card">
+<label for="phenotype">
+Phenotype file
+</label>
 
-    <h2>Online GWAS</h2>
+<input
+  id="phenotype"
+  type="file"
+  accept=".xlsx,.xls,.csv"
+>
 
-    <p class="description">
-      Run soybean genome-wide association analysis using your own phenotype
-      and genotype files. No local installation of R, rMVP, Python, or Ubuntu
-      will be required when the cloud backend is connected.
-    </p>
+<label for="genotype">
+Genotype / HapMap file
+</label>
 
-  </section>
+<input
+  id="genotype"
+  type="file"
+  accept=".hmp.txt,.hmp,.txt"
+>
 
-  <section class="card">
+<p class="small">
+The first phenotype column must contain accession/taxa names.
+All remaining phenotype columns should contain numeric traits.
+</p>
 
-    <h2>1. Input Files</h2>
+</div>
 
-    <div class="file-row">
-      <label for="onlinePhenotype">
-        Phenotype File
-      </label>
+<div class="card">
 
-      <input
-        id="onlinePhenotype"
-        type="file"
-        accept=".csv,.xlsx,.xls,.txt"
-      >
-    </div>
+<h2>2. GWAS models</h2>
 
-    <div class="file-row">
-      <label for="onlineGenotype">
-        Genotype File
-      </label>
+<div class="model-grid">
 
-      <input
-        id="onlineGenotype"
-        type="file"
-        accept=".hmp,.txt,.csv"
-      >
-    </div>
+<label class="model-option">
+<input id="glm" type="checkbox" checked>
+GLM
+</label>
 
-    <button id="runOnlineGWAS">
-      RUN GWAS
-    </button>
+<label class="model-option">
+<input id="mlm" type="checkbox" checked>
+MLM
+</label>
 
-    <div id="onlineStatus" class="status">
-      Select your phenotype and genotype files.
-    </div>
+<label class="model-option">
+<input id="farmcpu" type="checkbox" checked>
+FarmCPU
+</label>
 
-    <div class="warning">
-      Your files will be processed by the Online GWAS backend.
-      The cloud R/rMVP backend will be connected separately.
-    </div>
+</div>
 
-  </section>
+<div class="online-gwas-actions">
+<button id="localRBtn" type="button">
+DOWNLOAD LOCAL R GWAS PACKAGE
+</button>
 
-  <section id="onlineResults" class="card results">
+<button id="runRBtn" type="button">
+RUN R CODE
+</button>
+</div>
 
-    <h2>GWAS Results</h2>
+</div>
 
-    <div id="onlineResultsList"></div>
+<div class="card">
 
-  </section>
+<h2>3. Analysis status</h2>
 
-</main>
+<div id="status" class="status">
+Waiting for input files.
+</div>
 
-<script src="js/online-gwas.js"></script>
+</div>
+
+<div class="card hidden" id="resultsCard">
+
+<h2>4. GWAS results</h2>
+
+<div id="summary"></div>
+
+</div>
+
+<div class="card hidden" id="plotsCard">
+
+<h2>5. Visualization</h2>
+
+<div id="plots" class="plot-grid"></div>
+
+</div>
+
+<div class="card hidden" id="downloadsCard">
+
+<h2>6. Download results</h2>
+
+<div id="downloads" class="results-grid"></div>
+
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="js/online-gwas.js?v=20260922"></script>
 
 </body>
 </html>

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "online-gwas": {
+      "root": "online-gwas-module/online-gwas-backend",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.vercel"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/gwas/(.*)",
+      "destination": {
+        "service": "online-gwas"
+      }
+    }
+  ]
+}
