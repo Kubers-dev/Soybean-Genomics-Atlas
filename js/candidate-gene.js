@@ -323,10 +323,35 @@
 
     values = values.concat(
       asArray(a.GO),
-      asArray(a.go),
       asArray(a.go_terms),
       asArray(a.goTerms)
     );
+
+    // Candidate annotation stores GO terms by namespace:
+    // go: { BP: [...], MF: [...], CC: [...] }.
+    if (a.go && typeof a.go === "object" && !Array.isArray(a.go)) {
+      ["BP", "MF", "CC"].forEach(namespace => {
+        const terms = a.go[namespace];
+
+        if (Array.isArray(terms)) {
+          terms.forEach(term => {
+            if (typeof term === "string") {
+              values.push(term);
+            } else if (term && typeof term === "object") {
+              const id =
+                term.id ||
+                term.go_id ||
+                term.goId ||
+                "";
+
+              if (id) values.push(id);
+            }
+          });
+        }
+      });
+    } else {
+      values = values.concat(asArray(a.go));
+    }
 
     // Primary Wm82.a6 association source.
     if (!values.length && goData.gene_to_terms) {
