@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Candidate Gene | Soybean Genomics Atlas</title>
+<link rel="stylesheet" href="css/candidate-gene.css">
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="header-plant">
+    <img src="images/soybean-real-plant.png" alt="Soybean plant">
+  </div>
+  <div class="header-divider" aria-hidden="true"></div>
+
+  <div class="header-text">
+    <h1 class="header-title">Soybean Genomics Atlas</h1>
+    <p class="header-university">Tennessee State University</p>
+  </div>
+
+  <nav class="header-nav" aria-label="Atlas navigation">
+    <a href="index.html">Gene Explorer</a>
+    <a href="phenotype-analysis.html">Phenotype &amp; GWAS Analysis</a>
+    <a href="gwas-analysis.html">GWAS Analysis</a>
+    <a href="online-gwas.html">Online GWAS</a>
+    <a href="candidate-gene.html" class="active">Candidate Gene</a>
+  </nav>
+</header>
+
+<main class="candidate-page">
+
+  <section class="hero atlas-panel">
+    <div>
+      <div class="eyebrow">SOYBEAN GENOMICS ATLAS · WM82.A6.V1</div>
+      <h1>Candidate Gene Search</h1>
+      <p>
+        Identify genes surrounding a SNP or genomic position and explore
+        functional annotation, transcription-factor information, and GO enrichment.
+      </p>
+    </div>
+
+    <div id="annotationStatus" class="status-pill">
+      Loading Wm82.a6.v1 annotation…
+    </div>
+  </section>
+
+  <section class="workspace">
+
+    <aside class="search-card atlas-panel">
+
+      <div class="eyebrow">GENOMIC REGION</div>
+      <h2>SNP region search</h2>
+
+      <label for="snpId">SNP ID <span>optional</span></label>
+      <input id="snpId" type="text"
+             placeholder="Example: SNC_021162.2_67821180">
+
+      <label for="chromosome">Chromosome</label>
+      <select id="chromosome">
+        <option value="">Select chromosome</option>
+        <option value="1">Chr01</option>
+        <option value="2">Chr02</option>
+        <option value="3">Chr03</option>
+        <option value="4">Chr04</option>
+        <option value="5">Chr05</option>
+        <option value="6">Chr06</option>
+        <option value="7">Chr07</option>
+        <option value="8">Chr08</option>
+        <option value="9">Chr09</option>
+        <option value="10">Chr10</option>
+        <option value="11">Chr11</option>
+        <option value="12">Chr12</option>
+        <option value="13">Chr13</option>
+        <option value="14">Chr14</option>
+        <option value="15">Chr15</option>
+        <option value="16">Chr16</option>
+        <option value="17">Chr17</option>
+        <option value="18">Chr18</option>
+        <option value="19">Chr19</option>
+        <option value="20">Chr20</option>
+      </select>
+
+      <label for="position">SNP position (bp)</label>
+      <input id="position" type="number" min="1" step="1"
+             placeholder="Example: 67821180">
+
+      <div class="distance-row">
+        <div>
+          <label for="upstream">Upstream distance</label>
+          <div class="input-with-unit">
+            <input id="upstream" type="number" min="0" step="1" value="50">
+            <span>kb</span>
+          </div>
+        </div>
+
+        <div>
+          <label for="downstream">Downstream distance</label>
+          <div class="input-with-unit">
+            <input id="downstream" type="number" min="0" step="1" value="50">
+            <span>kb</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-distances">
+        <button type="button" data-kb="50">50 kb</button>
+        <button type="button" data-kb="100">100 kb</button>
+        <button type="button" data-kb="200">200 kb</button>
+      </div>
+
+      <button id="searchBtn" class="primary-action">
+        Search candidate genes
+      </button>
+
+      <button id="downloadBtn" class="secondary-action" disabled>
+        Download candidate CSV
+      </button>
+
+      <div id="message" class="message"></div>
+
+    </aside>
+
+    <section class="results-card atlas-panel">
+
+      <div class="results-header">
+        <div>
+          <div class="eyebrow">WM82.A6.V1 GENE ANNOTATION</div>
+          <h2>Candidate genes within selected SNP region</h2>
+          <p id="regionText">
+            Enter a chromosome, genomic position, and upstream/downstream distance.
+          </p>
+        </div>
+
+        <div id="resultCount" class="result-count">0 genes</div>
+      </div>
+
+      <div id="summary" class="summary-grid"></div>
+
+      <div id="regionPlot" class="region-plot" hidden></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Gene ID</th>
+              <th>Chr</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Strand</th>
+              <th>Distance</th>
+              <th>Region</th>
+              <th>TF</th>
+              <th>Function</th>
+            </tr>
+          </thead>
+
+          <tbody id="resultsBody">
+            <tr>
+              <td colspan="9" class="empty">
+                No search performed.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <section id="geneDetail" class="gene-detail atlas-subpanel" hidden></section>
+
+      <section id="enrichmentSection"
+               class="enrichment-section atlas-subpanel"
+               hidden>
+
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">FUNCTIONAL ENRICHMENT</div>
+            <h2>Gene Ontology enrichment</h2>
+            <p>
+              Hypergeometric enrichment using the Wm82.a6.v1 GO-annotated
+              gene background.
+            </p>
+          </div>
+
+          <button id="downloadEnrichmentBtn"
+                  class="secondary-action small-action"
+                  disabled>
+            Download GO CSV
+          </button>
+        </div>
+
+        <div class="enrichment-note">
+          Small candidate sets can produce large fold-enrichment values.
+          Interpret enrichment together with candidate count, background size,
+          P-value, and FDR.
+        </div>
+
+        <div class="go-tabs">
+          <button class="go-tab active" data-namespace="BP">Biological Process</button>
+          <button class="go-tab" data-namespace="MF">Molecular Function</button>
+          <button class="go-tab" data-namespace="CC">Cellular Component</button>
+        </div>
+
+        <div class="enrichment-layout">
+          <div class="enrichment-table-wrap">
+            <table class="enrichment-table">
+              <thead>
+                <tr>
+                  <th>GO ID</th>
+                  <th>Term</th>
+                  <th>Ontology</th>
+                  <th>Candidate</th>
+                  <th>Background</th>
+                  <th>Expected</th>
+                  <th>Fold</th>
+                  <th>P-value</th>
+                  <th>FDR</th>
+                </tr>
+              </thead>
+              <tbody id="enrichmentBody">
+                <tr>
+                  <td colspan="9" class="empty">
+                    No enrichment calculated.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="enrichmentPlot" class="enrichment-plot"></div>
+        </div>
+
+      </section>
+
+    </section>
+
+  </section>
+
+</main>
+
+<script src="js/candidate-gene.js?v=2"></script>
+
+</body>
+</html>
