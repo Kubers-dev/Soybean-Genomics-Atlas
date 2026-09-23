@@ -25,6 +25,10 @@
   let currentResults = [];
   let currentQuery = null;
   let currentEnrichment = [];
+  let currentEnrichmentMeta = {
+    candidateCount: 0,
+    backgroundCount: 0
+  };
   let currentNamespace = "BP";
 
   const $ = id => document.getElementById(id);
@@ -1196,6 +1200,10 @@
 
     if (!N || !n) {
       currentEnrichment = [];
+      currentEnrichmentMeta = {
+        candidateCount: n,
+        backgroundCount: N
+      };
 
       $("enrichmentBody").innerHTML = `
         <tr>
@@ -1275,6 +1283,10 @@
     );
 
     currentEnrichment = rows;
+    currentEnrichmentMeta = {
+      candidateCount: n,
+      backgroundCount: N
+    };
 
     renderEnrichment(currentNamespace);
   }
@@ -1306,7 +1318,24 @@
       return;
     }
 
-    body.innerHTML = rows.map(row => `
+    const candidateCount =
+      currentEnrichmentMeta.candidateCount;
+
+    const backgroundCount =
+      currentEnrichmentMeta.backgroundCount;
+
+    const interpretation =
+      candidateCount < 10
+        ? `GO enrichment is based on ${candidateCount} GO-annotated candidate gene${candidateCount === 1 ? "" : "s"} out of ${backgroundCount.toLocaleString()} GO-annotated Wm82.a6.v1 background genes. Because the candidate set is small, fold-enrichment values can be unstable and should be interpreted together with the candidate count, expected count, raw p-value, and BH-adjusted FDR.`
+        : `GO enrichment is based on ${candidateCount.toLocaleString()} GO-annotated candidate genes out of ${backgroundCount.toLocaleString()} GO-annotated Wm82.a6.v1 background genes. Fold enrichment is descriptive; statistical interpretation should rely primarily on the raw p-value and BH-adjusted FDR together with candidate and expected counts.`;
+
+    body.innerHTML = `
+      <tr class="enrichment-note-row">
+        <td colspan="9">
+          <strong>Interpretation:</strong> ${esc(interpretation)}
+        </td>
+      </tr>
+      ${rows.map(row => `
       <tr>
         <td>${esc(row.id)}</td>
 
@@ -1328,7 +1357,8 @@
           <strong>${formatP(row.fdr)}</strong>
         </td>
       </tr>
-    `).join("");
+      `).join("")}
+    `;
 
     $("downloadEnrichmentBtn").disabled = false;
 
