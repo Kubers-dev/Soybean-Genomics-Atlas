@@ -74,7 +74,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
 
-        if self.path == "/health":
+        if self.path in ("/health", "/api/gbs/health"):
 
             self.send_json(
                 200,
@@ -97,7 +97,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
 
-        if self.path != "/analyze":
+        if self.path not in ("/analyze", "/api/gbs/analyze"):
 
             self.send_json(
                 404,
