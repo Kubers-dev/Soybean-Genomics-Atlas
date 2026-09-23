@@ -1,17 +1,48 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
+    "frontend": {
+      "root": "."
+    },
+    "blob-api": {
+      "root": "blob-api",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.vercel"
+    },
     "online-gwas": {
       "root": "online-gwas-module/online-gwas-backend",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.vercel"
+    },
+    "gbs-api": {
+      "root": "gbs-backend",
       "runtime": "container",
       "entrypoint": "Dockerfile.vercel"
     }
   },
   "rewrites": [
     {
+      "source": "/api/blob-presign",
+      "destination": {
+        "service": "blob-api"
+      }
+    },
+    {
       "source": "/api/gwas/(.*)",
       "destination": {
         "service": "online-gwas"
+      }
+    },
+    {
+      "source": "/api/gbs/(.*)",
+      "destination": {
+        "service": "gbs-api"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
       }
     }
   ]

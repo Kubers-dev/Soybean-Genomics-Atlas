@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GBS Variant Analysis | Soybean Genomics Atlas</title>
+
+    <link rel="stylesheet" href="css/gbs-variant-analysis.css">
+</head>
+
+<body>
+
+<header class="atlas-header">
+    <div class="header-inner">
+        <div>
+            <h1>Soybean Genomics Atlas</h1>
+            <p>GBS Candidate Variant &amp; Protein Effect Analysis</p>
+        </div>
+
+        <a class="back-link" href="index.html">← Atlas Home</a>
+    </div>
+</header>
+
+<main class="page-container">
+
+    <section class="intro-card">
+        <h2>GBS Candidate Variant Analysis</h2>
+
+        <p>
+            Upload a GBS VCF file and define a genomic region to identify
+            sequence variants across accessions. Variants can be compared
+            at the accession level and, when the appropriate reference
+            annotation is available, evaluated for coding and protein-level
+            consequences.
+        </p>
+
+        <div class="workflow">
+            <span>GBS VCF</span>
+            <span>→</span>
+            <span>Region</span>
+            <span>→</span>
+            <span>Variants</span>
+            <span>→</span>
+            <span>Accessions</span>
+            <span>→</span>
+            <span>Protein effect</span>
+        </div>
+    </section>
+
+    <section class="analysis-card">
+
+        <h2>1. Input GBS Genotype Data</h2>
+
+        <div class="form-grid">
+
+            <div class="form-group full-width">
+                <label for="vcfFile">
+                    GBS genotype file
+                </label>
+
+                <input
+                    type="file"
+                    id="vcfFile"
+                    accept=".vcf,.vcf.gz"
+                >
+
+                <small>
+                    Supported formats: VCF and compressed VCF (.vcf.gz)
+                </small>
+            </div>
+
+            <div class="form-group">
+
+                <label for="genomeVersion">
+                    Reference genome version
+                </label>
+
+                <select id="genomeVersion">
+
+                    <option value="a2">
+                        Wm82.a2
+                    </option>
+
+                    <option value="a4" selected>
+                        Wm82.a4
+                    </option>
+
+                    <option value="a6">
+                        Wm82.a6
+                    </option>
+
+                </select>
+
+                <small>
+                    Select the genome version used for the genotype
+                    coordinates.
+                </small>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="analysis-card">
+
+        <h2>2. Define Genomic Region</h2>
+
+        <p class="section-help">
+            Enter the chromosome/contig and genomic interval to analyze.
+            Only variants within this region will be extracted.
+        </p>
+
+        <div class="form-grid">
+
+            <div class="form-group">
+
+                <label for="chromosome">
+                    Chromosome / Contig
+                </label>
+
+                <input
+                    type="text"
+                    id="chromosome"
+                    placeholder="e.g. NC_007942.1 or Gm01"
+                >
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="startPosition">
+                    Start position
+                </label>
+
+                <input
+                    type="number"
+                    id="startPosition"
+                    min="1"
+                    placeholder="Start"
+                >
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="endPosition">
+                    End position
+                </label>
+
+                <input
+                    type="number"
+                    id="endPosition"
+                    min="1"
+                    placeholder="End"
+                >
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="flanking">
+                    Optional flanking region (bp)
+                </label>
+
+                <input
+                    type="number"
+                    id="flanking"
+                    min="0"
+                    value="0"
+                >
+
+            </div>
+
+        </div>
+
+        <div class="action-row">
+
+            <button
+                id="analyzeButton"
+                class="primary-button"
+                type="button"
+            >
+                Analyze Region
+            </button>
+
+            <button
+                id="clearButton"
+                class="secondary-button"
+                type="button"
+            >
+                Clear
+            </button>
+
+        </div>
+
+        <div
+            id="statusMessage"
+            class="status-message hidden"
+        ></div>
+
+    </section>
+
+
+    <section
+        id="summarySection"
+        class="analysis-card hidden"
+    >
+
+        <h2>3. Analysis Summary</h2>
+
+        <div class="summary-grid">
+
+            <div class="summary-box">
+                <span class="summary-label">Genome</span>
+                <strong id="summaryGenome">—</strong>
+            </div>
+
+            <div class="summary-box">
+                <span class="summary-label">Region</span>
+                <strong id="summaryRegion">—</strong>
+            </div>
+
+            <div class="summary-box">
+                <span class="summary-label">Accessions</span>
+                <strong id="summaryAccessions">—</strong>
+            </div>
+
+            <div class="summary-box">
+                <span class="summary-label">Variants</span>
+                <strong id="summaryVariants">—</strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section
+        id="variantSection"
+        class="analysis-card hidden"
+    >
+
+        <div class="section-heading-row">
+
+            <div>
+                <h2>4. Variants in Region</h2>
+
+                <p class="section-help">
+                    Each row represents a variant detected within the
+                    researcher-defined region.
+                </p>
+            </div>
+
+            <input
+                type="text"
+                id="variantSearch"
+                class="table-search"
+                placeholder="Search variants..."
+            >
+
+        </div>
+
+        <div class="table-wrapper">
+
+            <table id="variantTable">
+
+                <thead>
+
+                    <tr>
+                        <th>Position</th>
+                        <th>REF</th>
+                        <th>ALT</th>
+                        <th>Reference</th>
+                        <th>Alternate</th>
+                        <th>Missing</th>
+                        <th>Allele Frequency</th>
+                        <th>Variant Carriers</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="variantTableBody"></tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <section
+        id="accessionSection"
+        class="analysis-card hidden"
+    >
+
+        <div class="section-heading-row">
+
+            <div>
+                <h2>5. Accession-Level Variant Comparison</h2>
+
+                <p class="section-help">
+                    Accessions carrying alternate alleles are shown for
+                    each selected variant.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="table-wrapper">
+
+            <table id="accessionTable">
+
+                <thead>
+
+                    <tr>
+                        <th>Variant</th>
+                        <th>Accession</th>
+                        <th>Genotype</th>
+                        <th>Allele Depth</th>
+                        <th>Depth</th>
+                        <th>Genotype Quality</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="accessionTableBody"></tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <section
+        id="proteinSection"
+        class="analysis-card hidden"
+    >
+
+        <h2>6. Protein-Level Consequences</h2>
+
+        <div class="protein-notice">
+
+            <strong>Protein annotation status</strong>
+
+            <p id="proteinStatus">
+                Protein-level annotation will be performed using the
+                reference annotation corresponding to the selected genome
+                version when that resource is available.
+            </p>
+
+        </div>
+
+        <div class="table-wrapper">
+
+            <table id="proteinTable">
+
+                <thead>
+
+                    <tr>
+                        <th>Contig</th>
+                        <th>Position</th>
+                        <th>REF</th>
+                        <th>ALT</th>
+                        <th>Gene</th>
+                        <th>Transcript</th>
+                        <th>Protein ID</th>
+                        <th>Consequence</th>
+                        <th>REF Codon</th>
+                        <th>ALT Codon</th>
+                        <th>Protein Change</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="proteinTableBody"></tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script src="js/gbs-variant-analysis.js"></script>
+
+</body>
+</html>

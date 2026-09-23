@@ -28,3 +28,5 @@ run_gwas.R
 gwas_backend.R.before-*
 js/*.before-*
 phenotype-analysis.html.before-*
+.vercel
+.env*

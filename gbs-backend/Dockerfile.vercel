@@ -1,0 +1,19 @@
+FROM python:3.13-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bcftools tabix \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY gbs_api.py ./gbs-backend/
+COPY gbs_combined_analysis.py ./gbs-backend/
+COPY gbs_region_extract.py ./gbs-backend/
+COPY gbs_variant_summary.py ./gbs-backend/
+COPY gbs_protein_effect.py ./gbs-backend/
+
+COPY references ./gbs-backend/references
+
+ENV PYTHONUNBUFFERED=1
+
+CMD ["python3", "gbs-backend/gbs_api.py"]
