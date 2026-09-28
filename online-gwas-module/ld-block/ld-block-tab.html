@@ -1,0 +1,82 @@
+<section id="onlineLdBlockPanel" class="online-tool-panel" aria-labelledby="onlineLdBlockTitle">
+  <div class="online-tool-heading">
+    <div>
+      <h2 id="onlineLdBlockTitle">LD Block Analysis</h2>
+      <p>VCF-based linkage disequilibrium and haplotype-block visualization using LDBlockShow.</p>
+    </div>
+    <span id="ldblockStatus" class="status-pill status-unknown">Checking software…</span>
+  </div>
+
+  <div class="ldblock-grid">
+    <label>VCF / VCF.GZ <span class="required">*</span>
+      <input id="ldVcf" type="file" accept=".vcf,.vcf.gz">
+    </label>
+
+    <label>Region <span class="required">*</span>
+      <input id="ldRegion" type="text" placeholder="chr11:24142640-24142760">
+    </label>
+
+    <label>LD measure
+      <select id="ldSeleVar">
+        <option value="2" selected>R²</option>
+        <option value="1">D′</option>
+        <option value="3">R² + D′</option>
+        <option value="4">D′ + R²</option>
+      </select>
+    </label>
+
+    <label>Block method
+      <select id="ldBlockType">
+        <option value="1" selected>PLINK / Gabriel</option>
+        <option value="2">Solid Spine of LD</option>
+        <option value="3">Strong-LD cutoff</option>
+        <option value="5">No block calling</option>
+      </select>
+    </label>
+
+    <label>MAF filter
+      <input id="ldMaf" type="number" min="0" max="0.5" step="0.01" value="0.05">
+    </label>
+
+    <label>Maximum missingness
+      <input id="ldMiss" type="number" min="0" max="1" step="0.01" value="0.25">
+    </label>
+
+    <label>Block cutoff
+      <input id="ldBlockCut" type="number" min="0" max="1" step="0.01" value="0.85">
+    </label>
+
+    <label>GWAS P-value file <span class="optional">optional</span>
+      <input id="ldGwas" type="file" accept=".txt,.tsv,.csv,.pvalue">
+    </label>
+
+    <label>GFF3 annotation <span class="optional">optional</span>
+      <input id="ldGff" type="file" accept=".gff,.gff3,.gz">
+    </label>
+
+    <label>GWAS cutline <span class="optional">optional</span>
+      <input id="ldCutline" type="number" min="0" step="0.1" placeholder="7">
+    </label>
+
+    <label class="checkbox-row">
+      <input id="ldShowNum" type="checkbox" checked>
+      Show LD values in heatmap
+    </label>
+  </div>
+
+  <div class="ldblock-actions">
+    <button id="ldCheckBtn" type="button" class="secondary-btn">Check LDBlockShow</button>
+    <button id="ldRunBtn" type="button" class="primary-btn">Run LD Block Analysis</button>
+  </div>
+
+  <div id="ldblockMessage" class="ldblock-message" hidden></div>
+
+  <div id="ldblockResults" class="ldblock-results" hidden>
+    <h3>LD Block Result</h3>
+    <div class="ldblock-preview-wrap">
+      <img id="ldblockPng" alt="LDBlockShow LD block plot" hidden>
+      <iframe id="ldblockSvg" title="LDBlockShow SVG result" hidden></iframe>
+    </div>
+    <div id="ldblockDownloads" class="ldblock-downloads"></div>
+  </div>
+</section>

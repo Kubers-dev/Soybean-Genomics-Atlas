@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>LD Block | Soybean Genomics Atlas</title>
+
+<link rel="stylesheet" href="online-gwas-module/ld-block/ld-block-tab.css">
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f5f7fa;
+  color: #222;
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 30px 20px 60px;
+}
+
+h1 {
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: #666;
+  margin-top: 0;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #dfe3e8;
+  border-radius: 12px;
+  padding: 22px;
+  margin: 18px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+}
+
+.site-nav a {
+  text-decoration: none;
+  color: #333;
+  padding: 8px 12px;
+  border-radius: 7px;
+  font-weight: 600;
+}
+
+.site-nav a:hover {
+  background: #eef2f5;
+}
+
+.site-nav a.active {
+  background: #2f6f3e;
+  color: #fff;
+}
+
+.required {
+  color: #c62828;
+}
+
+.optional {
+  color: #777;
+  font-weight: normal;
+  font-size: 0.9em;
+}
+
+input[type=file],
+input[type=text],
+input[type=number],
+select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  background: #fff;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin: 14px 0 7px;
+}
+
+button {
+  border: 0;
+  border-radius: 7px;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.primary-btn {
+  background: #2f6f3e;
+  color: #fff;
+}
+
+.secondary-btn {
+  background: #e9edf1;
+  color: #222;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.hidden {
+  display: none;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+  <nav class="site-nav" aria-label="Main navigation">
+    <a href="gene-explorer.html">Gene Explorer</a>
+    <a href="gene-expression.html">Gene Expression</a>
+    <a href="phenotype.html">Phenotype &amp; GWAS Analysis</a>
+    <a href="gwas-analysis.html">GWAS Analysis</a>
+    <a href="online-gwas.html">Online GWAS</a>
+    <a href="ld-block.html" class="active">LD Block</a>
+    <a href="candidate-gene.html">Candidate Gene</a>
+    <a href="gbs-variant-analysis.html">GBS Variant Analysis</a>
+  </nav>
+
+  <h1>LD Block</h1>
+
+  <p class="subtitle">
+    Linkage disequilibrium and haplotype-block visualization using
+    LDBlockShow.
+  </p>
+
+  <section
+    id="onlineLdBlockPanel"
+    class="online-tool-panel"
+    aria-labelledby="onlineLdBlockTitle">
+
+    <div class="online-tool-heading">
+      <div>
+        <h2 id="onlineLdBlockTitle">LD Block Analysis</h2>
+        <p>
+          Upload a VCF file and select a genomic region to generate
+          an LDBlockShow LD visualization.
+        </p>
+      </div>
+
+      <span
+        id="ldblockStatus"
+        class="status-pill status-unknown">
+        Checking software…
+      </span>
+    </div>
+
+    <div class="ldblock-grid">
+
+      <label>
+        VCF / VCF.GZ <span class="required">*</span>
+        <input
+          id="ldVcf"
+          type="file"
+          accept=".vcf,.vcf.gz">
+      </label>
+
+      <label>
+        Chromosome <span class="required">*</span>
+        <input
+          id="ldChromosome"
+          type="number"
+          min="1"
+          max="20"
+          step="1"
+          placeholder="1">
+      </label>
+
+      <label>
+        Start position <span class="required">*</span>
+        <input
+          id="ldStart"
+          type="number"
+          min="1"
+          step="1"
+          placeholder="24000">
+      </label>
+
+      <label>
+        End position <span class="required">*</span>
+        <input
+          id="ldEnd"
+          type="number"
+          min="1"
+          step="1"
+          placeholder="100000">
+      </label>
+
+      <label>
+        LD measure
+        <select id="ldSeleVar">
+          <option value="2" selected>R²</option>
+          <option value="1">D′</option>
+          <option value="3">R² + D′</option>
+          <option value="4">D′ + R²</option>
+        </select>
+      </label>
+
+      <label>
+        MAF filter
+        <input
+          id="ldMaf"
+          type="number"
+          min="0"
+          max="0.5"
+          step="0.01"
+          value="0.05">
+      </label>
+
+      <label>
+        Maximum missingness
+        <input
+          id="ldMiss"
+          type="number"
+          min="0"
+          max="1"
+          step="0.01"
+          value="0.25">
+      </label>
+
+      <label>
+        GWAS P-value file
+        <span class="optional">optional</span>
+        <input
+          id="ldGwas"
+          type="file"
+          accept=".txt,.tsv,.csv,.pvalue">
+      </label>
+
+      <label>
+        GFF3 annotation
+        <span class="optional">optional</span>
+        <input
+          id="ldGff"
+          type="file"
+          accept=".gff,.gff3,.gz">
+      </label>
+
+      <label>
+        GWAS cutline
+        <span class="optional">optional</span>
+        <input
+          id="ldCutline"
+          type="number"
+          min="0"
+          step="0.1"
+          placeholder="7">
+      </label>
+
+      <label class="checkbox-row">
+        <input
+          id="ldShowNum"
+          type="checkbox"
+          checked>
+        Show LD values in heatmap
+      </label>
+
+    </div>
+
+    <div class="ldblock-actions">
+
+      <button
+        id="ldCheckBtn"
+        type="button"
+        class="secondary-btn">
+        Check LDBlockShow
+      </button>
+
+      <button
+        id="ldRunBtn"
+        type="button"
+        class="primary-btn">
+        Run LD Block Analysis
+      </button>
+
+    </div>
+
+    <div
+      id="ldblockMessage"
+      class="ldblock-message"
+      hidden>
+    </div>
+
+    <section class="card ldblock-input-help" aria-labelledby="ldblockInputFormatTitle">
+      <h2 id="ldblockInputFormatTitle">Input File Format</h2>
+
+      <p>
+        Use a genotype VCF file and specify the genomic region to analyze.
+        GWAS and GFF3 files are optional and can be used to add association
+        and gene-annotation information to the LD visualization.
+      </p>
+
+      <h3>1. VCF / VCF.GZ — Required</h3>
+      <p>
+        Upload a standard VCF or VCF.GZ genotype file. The chromosome names
+        in the VCF may use a genome-specific naming convention.
+      </p>
+
+      <p>For example, the uploaded VCF may contain:</p>
+
+      <pre><code>#CHROM                  POS      ID           REF  ALT  QUAL  FILTER  INFO  FORMAT  Sample1  Sample2
+GLYMA.WM82.GNM4.GM01    24953    ss715578788  A    G    .     PASS    .     GT      1/1      0/0
+GLYMA.WM82.GNM4.GM01    26004    ss715578818  C    T    .     PASS    .     GT      1/1      0/0
+GLYMA.WM82.GNM4.GM01    29672    ss715578923  A    G    .     PASS    .     GT      0/0      1/1</code></pre>
+
+      <p>
+        <strong>Important:</strong> You do not need to enter the
+        genome-specific chromosome name manually. Enter only the chromosome
+        number in the Chromosome field. The website automatically detects
+        the corresponding chromosome name from the uploaded VCF.
+      </p>
+
+      <p>Example user input:</p>
+
+      <pre><code>Chromosome: 18
+Start position: 19901600
+End position: 20231600</code></pre>
+
+      <p>
+        <a
+          href="data/ld-block/examples/example_ldblock.vcf"
+          download
+          class="secondary-btn">
+          Download Example VCF File
+        </a>
+      </p>
+
+      <h3>2. Genomic Region — Required</h3>
+      <p>
+        Enter the chromosome number and coordinate range separately.
+        Chromosome numbers from 1–20 are supported.
+      </p>
+
+      <p>Example:</p>
+
+      <pre><code>Chromosome: 18
+Start position: 19901600
+End position: 20231600</code></pre>
+
+      <p>
+        Enter only the chromosome number. The website detects the corresponding
+        chromosome name directly from the uploaded VCF, so you do not need to
+        enter a genome-specific chromosome prefix.
+      </p>
+
+      <h3>3. GWAS P-value File — Optional</h3>
+      <p>
+        The GWAS file should contain three tab-separated columns:
+        chromosome, genomic position, and P-value.
+      </p>
+
+      <p>For example, a GWAS file may contain:</p>
+
+      <pre><code>chr18    20050807    4.57837E-07
+chr18    20053090    0.000569568
+chr18    20056167    9.97487E-07
+chr18    20059843    0.000420435</code></pre>
+
+      <p>
+        The chromosome name in the GWAS file does not need to match the VCF
+        chromosome name exactly. Common formats such as <code>18</code>,
+        <code>chr18</code>, <code>Chr18</code>, or a genome-specific
+        chromosome name can be used. The website automatically maps the
+        GWAS chromosome to the corresponding chromosome in the uploaded VCF.
+      </p>
+
+      <p>
+        <a
+          href="data/ld-block/examples/example_ldblock_gwas.txt"
+          download
+          class="secondary-btn">
+          Download Example GWAS File
+        </a>
+      </p>
+
+      <h3>4. GFF3 Annotation — Optional</h3>
+      <p>
+        A standard GFF3 annotation file can be supplied to display gene
+        annotation information for the selected genomic region.
+      </p>
+
+      <pre><code>##gff-version 3
+GLYMA.WM82.GNM4.GM18  source  gene  20050000  20060000  .  +  .  ID=gene1;Name=ExampleGene1</code></pre>
+
+      <p>
+        <a
+          href="data/ld-block/examples/example_ldblock.gff3"
+          download
+          class="secondary-btn">
+          Download Example GFF3 File
+        </a>
+      </p>
+
+      <h3>Analysis Parameters</h3>
+      <ul>
+        <li><strong>LD measure:</strong> R², D′, or combined visualization.</li>
+        <li><strong>MAF:</strong> minimum minor allele frequency filter.</li>
+        <li><strong>Maximum missingness:</strong> maximum allowed missing genotype proportion.</li>
+        <li><strong>GWAS cutline:</strong> optional threshold for displaying the GWAS significance line.</li>
+        <li><strong>Show LD values:</strong> displays LD values in the visualization when available.</li>
+      </ul>
+
+      <p class="optional">
+        For large datasets, restrict the analysis to a focused genomic region
+        rather than submitting an entire chromosome or genome.
+      </p>
+    </section>
+
+    <div
+      id="ldblockResults"
+      class="ldblock-results"
+      hidden>
+
+      <h3>LD Block Result</h3>
+
+      <div class="ldblock-preview-wrap">
+
+        <img
+          id="ldblockPng"
+          alt="LDBlockShow LD block plot"
+          hidden>
+
+        <iframe
+          id="ldblockSvg"
+          title="LDBlockShow SVG result"
+          hidden>
+        </iframe>
+
+      </div>
+
+      <div
+        id="ldblockDownloads"
+        class="ldblock-downloads">
+      </div>
+
+    </div>
+
+  </section>
+
+</div>
+
+<script src="online-gwas-module/ld-block/ld-block-tab.js?v=20260928"></script>
+
+</body>
+</html>
