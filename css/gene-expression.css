@@ -16,8 +16,8 @@ body{margin:0;background:var(--ge-bg);color:var(--ge-ink);font-family:Arial,Helv
 .header-text{color:#fff;margin:0;padding:0;line-height:1}
 .header-title{margin:0;font-size:30px;line-height:1.1;font-weight:700;white-space:nowrap}
 .header-university{margin:7px 0 0;font-size:18px;line-height:1.1;font-weight:400;white-space:nowrap}
-.header-nav{margin-left:auto;margin-right:28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-.header-nav a{color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:9px 12px;border:1px solid #666;border-radius:5px;white-space:nowrap}
+.header-nav{margin-left:auto;margin-right:20px;display:flex;align-items:center;gap:7px;flex:1 1 auto;min-width:0;flex-wrap:nowrap;justify-content:flex-end;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}.header-nav::-webkit-scrollbar{display:none}
+.header-nav a{color:#fff;text-decoration:none;font-size:13px;font-weight:600;padding:8px 10px;border:1px solid #666;border-radius:5px;white-space:nowrap;flex:0 0 auto}
 .header-nav a:hover{background:#222;border-color:#fff}.header-nav a.active{background:#fff;color:#000;border-color:#fff}
 .ge-page{max-width:1500px;margin:0 auto;padding:28px 28px 60px}
 .ge-hero{display:grid;grid-template-columns:1.25fr .9fr;gap:24px;align-items:stretch;margin-bottom:22px}
