@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Condition Expression | Soybean Genomics Atlas</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#f6f4f9;
+  color:#111;
+  font-family:Arial,Helvetica,sans-serif
+}
+button,select,textarea{font:inherit}
+.site-header{
+  min-height:112px;
+  background:#050505;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  gap:25px;
+  padding:18px 28px
+}
+.site-title{min-width:260px}
+.site-kicker,.eyebrow{
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.15em
+}
+.site-kicker{color:#aaa;margin-bottom:6px}
+.site-name{font-size:23px;font-weight:700}
+.site-nav{
+  margin-left:auto;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:7px
+}
+.site-nav a{
+  color:#fff;
+  text-decoration:none;
+  border:1px solid #555;
+  border-radius:5px;
+  padding:8px 10px;
+  font-size:12px;
+  font-weight:600
+}
+.site-nav a:hover,
+.site-nav a.active{
+  background:#fff;
+  color:#111
+}
+.page{
+  max-width:1380px;
+  margin:auto;
+  padding:25px 24px 50px
+}
+.card{
+  background:#fff;
+  border:1px solid #d9dee5;
+  border-radius:14px;
+  margin-bottom:20px;
+  padding:24px
+}
+.hero{
+  display:grid;
+  grid-template-columns:1.4fr .8fr;
+  gap:25px
+}
+h1{font-size:34px;margin:8px 0}
+h2{font-size:27px;margin:7px 0}
+h3{font-size:20px;margin:6px 0}
+h4{font-size:15px;margin:0 0 12px}
+p{
+  color:#5f6670;
+  line-height:1.5
+}
+.dataset{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px
+}
+.dataset div{
+  padding:14px;
+  border:1px solid #e1dfe6;
+  border-radius:9px;
+  background:#faf9fc
+}
+.dataset span{
+  display:block;
+  color:#747982;
+  font-size:11px;
+  letter-spacing:.12em;
+  margin-bottom:5px
+}
+.panel-head,
+.results-head,
+.details-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:20px
+}
+.panel-head{
+  padding-bottom:18px;
+  border-bottom:1px solid #e4e6ea
+}
+.scale{
+  min-width:210px
+}
+.scale span,
+.search label{
+  display:block;
+  font-size:13px;
+  font-weight:700;
+  margin-bottom:7px
+}
+select,textarea{
+  width:100%;
+  border:1px solid #cdd3da;
+  border-radius:8px;
+  background:#fff;
+  padding:10px 12px
+}
+textarea{
+  min-height:110px;
+  resize:vertical;
+  font-family:monospace
+}
+.search{
+  max-width:850px;
+  margin-top:20px;
+  padding:20px;
+  border:1px solid #e3e0e8;
+  border-radius:10px;
+  background:#f9f7fb
+}
+.actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px
+}
+button{
+  padding:10px 16px;
+  border-radius:7px;
+  border:1px solid #bfc5cc;
+  background:#fff;
+  font-weight:700;
+  cursor:pointer
+}
+button.primary{
+  background:#111;
+  color:#fff;
+  border-color:#111
+}
+.status{
+  margin-top:10px;
+  color:#555e68;
+  font-size:13px
+}
+.warning{
+  margin-top:10px;
+  padding:10px;
+  background:#fff4df;
+  color:#754f00;
+  border-radius:7px;
+  font-size:13px
+}
+.results-head{
+  padding-bottom:18px;
+  border-bottom:1px solid #e4e6ea
+}
+.compare,
+.heatmap,
+.details{
+  margin-top:18px;
+  border:1px solid #dfe3e8;
+  border-radius:10px;
+  overflow:hidden
+}
+.compare{
+  padding:18px;
+  background:#f8f6fa;
+  display:flex;
+  justify-content:space-between;
+  align-items:center
+}
+.threshold{
+  color:#626a73;
+  font-size:13px
+}
+.section-head{
+  padding:18px;
+  background:#f8f6fa;
+  border-bottom:1px solid #dfe3e8
+}
+.legend{
+  color:#626a73;
+  font-size:12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:13px;
+  margin-top:10px
+}
+.heatmap-body{
+  padding:18px;
+  overflow-x:auto
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:720px
+}
+th,td{
+  padding:11px 12px;
+  border-bottom:1px solid #e0e3e7;
+  text-align:center
+}
+th{
+  background:#faf9fc;
+  font-size:12px
+}
+th:first-child,
+td:first-child{
+  text-align:left
+}
+.gene{
+  font-family:monospace;
+  font-size:12px
+}
+.value{
+  min-width:150px;
+  font-weight:700
+}
+.sig{
+  font-weight:700
+}
+.up{color:#216b3c}
+.down{color:#8b3030}
+.ns{color:#59616b}
+.gradient{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin-top:12px;
+  color:#69717a;
+  font-size:12px
+}
+.gradient-bar{
+  width:150px;
+  height:10px;
+  border-radius:20px;
+  background:linear-gradient(90deg,#fff0d5,#e0a148,#b45d3d)
+}
+.detail-card{
+  border-bottom:1px solid #e0e3e7;
+  padding:20px
+}
+.detail-card:last-child{
+  border-bottom:0
+}
+.detail-title{
+  display:flex;
+  justify-content:space-between;
+  gap:15px;
+  align-items:flex-start;
+  margin-bottom:18px
+}
+.detail-gene{
+  margin-top:5px;
+  font-family:monospace;
+  font-weight:700;
+  font-size:15px;
+  overflow-wrap:anywhere
+}
+.badge{
+  padding:6px 10px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap
+}
+.badge.up{background:#e6f3ea}
+.badge.down{background:#f6e7e7}
+.badge.neutral{background:#eef0f3}
+.metrics{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:20px
+}
+.metric{
+  border:1px solid #e0e3e7;
+  border-radius:8px;
+  padding:11px;
+  background:#fcfcfd
+}
+.metric span{
+  display:block;
+  color:#69717a;
+  font-size:11px;
+  margin-bottom:5px
+}
+.metric strong{font-size:15px}
+.go{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px
+}
+.go span{
+  border:1px solid #d2d7dd;
+  border-radius:20px;
+  padding:5px 9px;
+  font-family:monospace;
+  font-size:12px
+}
+.muted{
+  color:#68717b;
+  font-size:13px
+}
+.source{
+  font-size:13px;
+  color:#5f6670;
+  line-height:1.5
+}
+@media(max-width:900px){
+  .site-header{flex-direction:column;align-items:flex-start}
+  .site-nav{margin-left:0;justify-content:flex-start}
+  .hero{grid-template-columns:1fr}
+  .panel-head,.results-head,.details-head{flex-direction:column}
+  .scale{width:100%}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:560px){
+  .page{padding:12px}
+  .card{padding:17px}
+  .dataset{grid-template-columns:1fr}
+  .metrics{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="site-title">
+    <div class="site-kicker">SOYBEAN GENOMICS ATLAS</div>
+    <div class="site-name">Condition Expression</div>
+  </div>
+
+  <nav class="site-nav">
+    <a href="gene-explorer.html">Gene Explorer</a>
+    <a href="gene-expression.html">Gene Expression</a>
+    <a class="active" href="condition-expression.html">Condition Expression</a>
+    <a href="gwas-analysis.html">GWAS Analysis</a>
+    <a href="online-gwas.html">Online GWAS</a>
+    <a href="ld-block.html">LD Block</a>
+    <a href="candidate-gene.html">Candidate Gene</a>
+    <a href="gbs-variant-analysis.html">GBS Variant Analysis</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="card hero">
+  <div>
+    <div class="eyebrow">CONDITION-SPECIFIC EXPRESSION</div>
+    <h1>Condition expression</h1>
+    <p>
+      Compare gene expression between experimental conditions using
+      condition-level summaries from the SCN soybean root dataset.
+      Individual biological replicates are not displayed.
+    </p>
+  </div>
+
+  <div class="dataset">
+    <div><span>TISSUE</span><strong>Root</strong></div>
+    <div><span>CONTROL</span><strong>WC</strong></div>
+    <div><span>TREATMENT</span><strong>SCN-WT</strong></div>
+    <div><span>REPLICATES</span><strong>3 / condition</strong></div>
+  </div>
+</section>
+
+<section class="card">
+
+  <div class="panel-head">
+    <div>
+      <div class="eyebrow">EXPRESSION ANALYSIS</div>
+      <h2>Gene-level condition comparison</h2>
+      <p>Enter one or more Wm82.a6 gene identifiers.</p>
+    </div>
+
+    <label class="scale">
+      <span>Expression scale</span>
+      <select id="expressionMode">
+        <option value="tpm">TPM</option>
+        <option value="log2tpm">log₂(TPM + 1)</option>
+        <option value="zscore">Gene-wise Z-score</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="search">
+    <label for="geneInput">Gene ID(s)</label>
+
+    <textarea
+      id="geneInput"
+      spellcheck="false"
+      placeholder="Example:
+Glyma.02G029400
+Glyma.09G274000"></textarea>
+
+    <div class="actions">
+      <button id="analyzeGenes" class="primary">
+        Analyze expression
+      </button>
+
+      <button id="clearGenes">
+        Clear
+      </button>
+    </div>
+
+    <div id="searchStatus" class="status">
+      Loading SCN_W82 data…
+    </div>
+
+    <div id="missingPanel" class="warning" hidden></div>
+  </div>
+
+</section>
+
+<section id="resultsPanel" class="card" hidden>
+
+  <div class="results-head">
+    <div>
+      <div class="eyebrow">CONDITION COMPARISON</div>
+      <h2>Condition expression heatmap</h2>
+      <p id="resultsSubtitle"></p>
+    </div>
+
+    <button id="downloadCsv">
+      Download CSV
+    </button>
+  </div>
+
+  <div class="compare">
+    <div>
+      <div class="eyebrow">DIFFERENTIAL EXPRESSION</div>
+      <h3>SCN-WT vs WC</h3>
+    </div>
+
+    <div class="threshold">
+      padj &lt; 0.05 and |log₂FC| ≥ 1
+    </div>
+  </div>
+
+  <div class="heatmap">
+
+    <div class="section-head">
+      <div class="eyebrow">CONDITION HEATMAP</div>
+      <h3>Selected genes</h3>
+
+      <div class="legend">
+        <span><b>NS</b> not significant</span>
+        <span><b>*</b> padj &lt; 0.05</span>
+        <span><b>**</b> padj &lt; 0.01</span>
+        <span><b>***</b> padj &lt; 0.001</span>
+      </div>
+    </div>
+
+    <div id="heatmapWrap" class="heatmap-body"></div>
+
+  </div>
+
+  <div class="details">
+
+    <div class="section-head">
+      <div class="eyebrow">GENE DETAILS</div>
+      <h3>Condition-level expression and annotation</h3>
+      <p class="source">
+        Individual biological replicate values are not displayed.
+      </p>
+    </div>
+
+    <div id="geneDetailsWrap"></div>
+
+  </div>
+
+</section>
+
+<section class="card source">
+  <strong>Dataset</strong>
+  <p>
+    SCN_W82 soybean root expression dataset. Expression values are summarized
+    at the condition level from three biological replicates per condition.
+    The expression dataset contains the condition-level TPM, log₂(TPM + 1),
+    and gene-wise Z-score values. Gene classification, GO identifiers,
+    transcription-factor annotation, and differential-expression statistics
+    are loaded from the corresponding SCN_W82 website metadata.
+  </p>
+</section>
+
+</main>
+
+<script src="js/condition-expression.js?v=20260928-clean1"></script>
+
+</body>
+</html>
