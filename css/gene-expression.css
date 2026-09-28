@@ -1,0 +1,288 @@
+:root {
+  --ge-ink:#111111;
+  --ge-muted:#5f6368;
+  --ge-border:#d9dde2;
+  --ge-panel:#ffffff;
+  --ge-bg:#f6f7f8;
+  --ge-accent:#6b8f3e;
+  --ge-warn:#8a5a00;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ge-bg);color:var(--ge-ink);font-family:Arial,Helvetica,sans-serif}
+.site-header{width:100%;height:112px;background:#000;display:flex;align-items:center;overflow:hidden;margin:0;padding:0}
+.header-plant{width:125px;height:112px;flex:0 0 125px;display:flex;align-items:center;justify-content:flex-start;overflow:visible}
+.header-plant img{display:block;width:125px;height:112px;object-fit:contain;object-position:left center}
+.header-divider{width:1px;height:82px;background:#777;flex:0 0 1px;margin-left:19px;margin-right:16px}
+.header-text{color:#fff;margin:0;padding:0;line-height:1}
+.header-title{margin:0;font-size:30px;line-height:1.1;font-weight:700;white-space:nowrap}
+.header-university{margin:7px 0 0;font-size:18px;line-height:1.1;font-weight:400;white-space:nowrap}
+.header-nav{margin-left:auto;margin-right:28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.header-nav a{color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:9px 12px;border:1px solid #666;border-radius:5px;white-space:nowrap}
+.header-nav a:hover{background:#222;border-color:#fff}.header-nav a.active{background:#fff;color:#000;border-color:#fff}
+.ge-page{max-width:1500px;margin:0 auto;padding:28px 28px 60px}
+.ge-hero{display:grid;grid-template-columns:1.25fr .9fr;gap:24px;align-items:stretch;margin-bottom:22px}
+.ge-hero>div:first-child,.ge-search-card,.ge-panel{background:#fff;border:1px solid var(--ge-border);border-radius:12px}
+.ge-hero>div:first-child{padding:30px}
+.ge-eyebrow{font-size:11px;letter-spacing:.16em;font-weight:700;color:#687078;text-transform:uppercase}
+.ge-hero h1{font-size:34px;margin:8px 0 8px}.ge-hero p{color:#555;max-width:850px;line-height:1.55}
+.ge-search-card{padding:22px;display:flex;flex-direction:column;justify-content:center}.ge-search-card label,.ge-controls label{font-size:12px;font-weight:700;color:#444}
+#geneInput{margin-top:8px;width:100%;resize:vertical;border:1px solid #cfd4da;border-radius:8px;padding:12px;font:14px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;min-height:118px}
+.ge-search-row{display:flex;gap:10px;margin-top:12px}.ge-search-row button,.figure-actions button{border:1px solid #aaa;background:#fff;border-radius:6px;padding:9px 13px;cursor:pointer;font-weight:600}.ge-primary{background:#111!important;color:#fff;border-color:#111!important}.ge-status{min-height:20px;margin-top:9px;color:#666;font-size:12px}
+.ge-panel{padding:22px}.ge-toolbar{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;border-bottom:1px solid #e2e5e8;padding-bottom:18px;margin-bottom:18px}.ge-toolbar h2{margin:5px 0;font-size:24px}.ge-toolbar p{margin:0;color:#666;font-size:13px}.ge-controls{display:flex;gap:12px}.ge-controls label{display:flex;flex-direction:column;gap:6px}.ge-controls select{min-width:175px;border:1px solid #cfd4da;border-radius:6px;padding:8px;background:#fff}
+.efp-card,.heatmap-card{border:1px solid #e0e3e6;border-radius:10px;background:#fff;overflow:hidden}.efp-card-head{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:13px 15px;border-bottom:1px solid #e3e6e8;background:#fafafa}.efp-card-head strong{font-size:14px}.efp-card-head span{display:block;color:#777;font-size:11px;margin-top:3px}.figure-actions{display:flex;gap:7px;flex-wrap:wrap}.figure-actions button{font-size:11px;padding:7px 10px}
+.efp-svg-wrap{width:100%;min-height:650px;padding:12px;overflow:auto}.efp-svg{display:block;width:100%;min-width:900px;height:auto}
+.heatmap-wrap{
+  width:100%;
+  min-height:520px;
+  overflow:auto;
+  padding:18px;
+  background:#fff;
+}
+
+.expression-heatmap{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:1px;
+  table-layout:fixed;
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+.expression-heatmap th,
+.expression-heatmap td{
+  padding:0;
+}
+
+.expression-heatmap thead th{
+  position:sticky;
+  top:0;
+  z-index:3;
+  height:115px;
+  background:#fff;
+  color:#222;
+  font-size:11px;
+  font-weight:600;
+  vertical-align:bottom;
+  border-bottom:1px solid #222;
+}
+
+.expression-heatmap thead th.condition{
+  min-width:54px;
+  writing-mode:vertical-rl;
+  transform:rotate(180deg);
+  text-align:left;
+  padding:8px 5px;
+}
+
+.expression-heatmap th.gene-header{
+  position:sticky;
+  left:0;
+  z-index:5;
+  width:175px;
+  min-width:175px;
+  background:#fff;
+  text-align:left;
+  padding:8px 10px;
+  border-right:1px solid #222;
+}
+
+.expression-heatmap tbody th.gene{
+  position:sticky;
+  left:0;
+  z-index:2;
+  width:175px;
+  min-width:175px;
+  background:#fff;
+  color:#222;
+  font-size:10px;
+  font-weight:500;
+  text-align:left;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  padding:3px 10px;
+  border-right:1px solid #ddd;
+}
+
+.expression-heatmap td.expression-cell{
+  width:28px;
+  min-width:28px;
+  height:20px;
+  border:0;
+  cursor:default;
+}
+
+.expression-heatmap td.expression-cell:hover{
+  outline:1px solid #222;
+  outline-offset:-1px;
+}
+
+.expression-heatmap td.missing-cell{
+  background:#eeeeee !important;
+}
+
+.heatmap-title{
+  font-size:15px;
+  font-weight:600;
+  color:#222;
+  margin:0 0 5px 0;
+}
+
+.heatmap-subtitle{
+  font-size:11px;
+  color:#666;
+  margin:0 0 14px 0;
+}
+
+.heatmap-legend{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:16px;
+  font-size:10px;
+  color:#555;
+}
+
+.heatmap-legend-gradient{
+  width:180px;
+  height:11px;
+  border:1px solid #ccc;
+}
+
+.heatmap-legend-label{
+  white-space:nowrap;
+}
+
+@media(max-width:950px){
+  .heatmap-wrap{
+    min-height:450px;
+    padding:10px;
+  }
+
+  .expression-heatmap th.gene-header,
+  .expression-heatmap tbody th.gene{
+    width:135px;
+    min-width:135px;
+  }
+
+  .expression-heatmap td.expression-cell{
+    width:22px;
+    min-width:22px;
+    height:17px;
+  }
+}
+.ge-warning{margin-top:14px;border:1px solid #ead7a7;background:#fff9e8;color:#684900;border-radius:8px;padding:12px;font-size:12px}
+.ge-source-note{margin-top:18px;padding:15px 16px;border-top:1px solid #ddd;color:#5b6065;font-size:11px;line-height:1.55}.ge-source-note strong{color:#25282b}.ge-source-note p{margin:6px 0 0}
+@media(max-width:950px){.ge-hero{grid-template-columns:1fr}.ge-toolbar{flex-direction:column;align-items:stretch}.ge-controls{flex-wrap:wrap}.header-nav{display:none}.ge-page{padding:16px}.efp-svg-wrap{min-height:500px}}
+
+/* =========================================================
+   eFP Browser scientific dashboard
+   ========================================================= */
+
+.efp-browser-view{
+  width:100%;
+  background:#fff;
+}
+
+.efp-browser-view .efp-svg{
+  display:block;
+  width:100%;
+  min-width:1100px;
+  height:auto;
+  background:#fff;
+}
+
+.efp-value-table-wrap{
+  margin:0;
+  border-top:1px solid #d9dde1;
+  background:#fff;
+  overflow-x:auto;
+}
+
+.efp-value-table-title{
+  padding:14px 16px 10px;
+  font-size:15px;
+  font-weight:700;
+  color:#20252a;
+  border-bottom:1px solid #e2e5e8;
+}
+
+.efp-value-table{
+  width:100%;
+  border-collapse:collapse;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:12px;
+}
+
+.efp-value-table th{
+  background:#f5f7f8;
+  color:#333;
+  font-weight:700;
+  text-align:left;
+  padding:9px 12px;
+  border-bottom:1px solid #cfd4d8;
+  white-space:nowrap;
+}
+
+.efp-value-table td{
+  padding:8px 12px;
+  border-bottom:1px solid #e7eaec;
+  color:#333;
+  white-space:nowrap;
+}
+
+.efp-value-table tbody tr:hover{
+  background:#fafafa;
+}
+
+.efp-value-table td:not(:first-child),
+.efp-value-table th:not(:first-child){
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+
+.single-view{
+  margin-top:18px;
+}
+
+.single-view .efp-card{
+  box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+
+.single-view .efp-card-head{
+  background:#f7f9fa;
+  padding:15px 18px;
+}
+
+.single-view .efp-card-head strong{
+  font-size:17px;
+  color:#172b3a;
+}
+
+.single-view .efp-card-head span{
+  font-size:11px;
+  color:#687078;
+}
+
+.efp-svg-wrap{
+  padding:0;
+  min-height:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+
+@media(max-width:1100px){
+  .efp-browser-view .efp-svg{
+    min-width:1000px;
+  }
+}
+
+@media(max-width:700px){
+  .efp-browser-view .efp-svg{
+    min-width:900px;
+  }
+
+  .efp-value-table{
+    min-width:700px;
+  }
+}
+

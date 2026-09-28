@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gene Expression | Soybean Genomics Atlas</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/gene-expression.css">
+</head>
+<body>
+<header class="site-header ge-header">
+  <div class="header-plant"><img src="images/soybean-real-plant.png" alt="Soybean plant"></div>
+  <div class="header-divider" aria-hidden="true"></div>
+  <div class="header-text">
+    <h1 class="header-title">Soybean Genomics Atlas</h1>
+    <p class="header-university">Tennessee State University</p>
+  </div>
+  <nav class="header-nav" aria-label="Atlas navigation">
+    <a href="index.html">Gene Explorer</a>
+    <a href="gene-expression.html" class="active">Gene Expression</a>
+    <a href="phenotype-analysis.html">Phenotype &amp; GWAS Analysis</a>
+  </nav>
+</header>
+
+<main class="ge-page">
+  <section class="ge-hero">
+    <div>
+      <div class="ge-eyebrow">SOYBEAN GENE EXPRESSION ATLAS</div>
+      <h1>Expression Explorer</h1>
+      <p>Search one gene for an eFP-style tissue view, or paste multiple genes for a circular clustered heatmap.</p>
+    </div>
+    <div class="ge-search-card">
+      <label for="geneInput">Gene ID(s)</label>
+      <textarea id="geneInput" rows="5" spellcheck="false" placeholder="Glyma.01G000100\nGlyma.01G000400"></textarea>
+      <div class="ge-search-row">
+        <button id="analyzeGenes" class="ge-primary">Analyze expression</button>
+        <button id="clearGenes" class="ge-secondary">Clear</button>
+      </div>
+      <div id="searchStatus" class="ge-status" role="status"></div>
+    </div>
+  </section>
+
+  <section id="resultPanel" class="ge-panel" hidden>
+    <div class="ge-toolbar">
+      <div>
+        <div class="ge-eyebrow">EXPRESSION VIEW</div>
+        <h2 id="resultTitle">Gene expression</h2>
+        <p id="resultSubtitle"></p>
+      </div>
+      <div class="ge-controls">
+        <label>Series
+          <select id="seriesSelect">
+            <option value="tissue">Tissue Expression</option>
+            <option value="root_hair">Root Hair Series</option>
+            <option value="root_hair_reference">Root Hair Reference</option>
+          </select>
+        </label>
+        <label id="transformWrap">Scale
+          <select id="transformSelect">
+            <option value="raw">TPM</option>
+            <option value="log1p">log₂(TPM + 1)</option>
+            <option value="zscore">Gene-wise Z-score</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div id="singleGeneView" class="single-view" hidden>
+      <div class="efp-card">
+        <div class="efp-card-head">
+          <div><strong id="singleGeneId"></strong><span id="singleGeneAliases"></span></div>
+          <div class="figure-actions">
+            <button id="downloadEfpSvg">Download SVG</button>
+            <button id="downloadEfpPng">Download PNG</button>
+            <button id="downloadSingleCsv">Download CSV</button>
+          </div>
+        </div>
+        <div id="efpSvgWrap" class="efp-svg-wrap"></div>
+      </div>
+    </div>
+
+    <div id="multiGeneView" class="multi-view" hidden>
+      <div class="heatmap-card">
+        <div class="efp-card-head">
+          <div><strong>Expression Heatmap</strong><span id="multiGeneMeta"></span></div>
+          <div class="figure-actions">
+            <button id="downloadHeatmapSvg">Download SVG</button>
+            <button id="downloadHeatmapPng">Download PNG</button>
+            <button id="downloadMultiCsv">Download CSV</button>
+          </div>
+        </div>
+        <div id="heatmapWrap" class="heatmap-wrap"></div>
+      </div>
+    </div>
+
+    <div id="missingPanel" class="ge-warning" hidden></div>
+
+    <div class="ge-source-note">
+      <strong>Source and attribution</strong>
+      <p>eFP by R. Patel. Drawings by R. Patel. Data for Root Hair series from Complete Transcriptome of Soybean Root Hair Cell, a Single Cell Model, and its alteration in response to <em>Bradyrhizobium japonicum</em> infection: Libault, M., Farmer, A., Brechenmacher, L et al. (2010). Plant Physiol. 152, 541-552. All other data from An Integrated Transcriptome Atlas of the Crop Model <em>Glycine max</em>, and its use in Comparative Analyses in Plants: Libault, M., et al. (2010) The Plant Journal 63, 86-99. Data is mRNA-Seq derived data and all samples were sampled in triplicate.</p>
+    </div>
+  </section>
+</main>
+
+<script src="js/gene-expression.js"></script>
+</body>
+</html>
