@@ -604,7 +604,7 @@ They are not uploaded to a cloud GWAS server by this package.
 
         const healthResponse =
           await fetch(
-            "https://soybean-genomics-atlas.vercel.app/api/gwas/health",
+            "http://127.0.0.1:8765/health",
             {
               method: "GET",
               cache: "no-store"
@@ -675,7 +675,7 @@ They are not uploaded to a cloud GWAS server by this package.
 
         const runResponse =
           await fetch(
-            "https://soybean-genomics-atlas.vercel.app/api/gwas/run-r",
+            "http://127.0.0.1:8765/run-r",
             {
               method: "POST",
               body: formData
