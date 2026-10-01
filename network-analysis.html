@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Network Analysis | Soybean Genomics Atlas</title>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/network-analysis.css">
+  <link rel="stylesheet" href="css/multiple-gene-network.css">
+    <link rel="stylesheet" href="css/multiple-gene-kegg.css">
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="header-plant">
+    <img src="images/soybean-real-plant.png" alt="Soybean plant">
+  </div>
+
+  <div class="header-divider" aria-hidden="true"></div>
+
+  <div class="header-text">
+    <h1 class="header-title">Soybean Genomics Atlas</h1>
+    <p class="header-university">Tennessee State University</p>
+  </div>
+
+  <nav class="header-nav" aria-label="Atlas navigation">
+
+    <a href="index.html">Gene Explorer</a>
+
+    <a href="gene-expression.html">
+      Gene Expression
+    </a>
+
+    <a href="phenotype-analysis.html">
+      Phenotype &amp; GWAS Analysis
+    </a>
+
+    <a href="gwas-analysis.html">
+      GWAS Analysis
+    </a>
+
+    <a href="online-gwas.html">
+      Online GWAS
+    </a>
+
+    <a href="candidate-gene.html">
+      Candidate Gene
+    </a>
+
+    <a href="network-analysis.html" class="active">
+      Network Analysis
+    </a>
+
+  </nav>
+</header>
+
+
+<main class="network-page">
+
+  <!-- HERO -->
+
+  <section class="network-hero">
+
+    <div class="hero-content">
+
+      <div class="network-eyebrow">
+        SOYBEAN GENOMICS ATLAS · WM82.A6
+      </div>
+
+      <h1>Network Analysis</h1>
+
+      <p>
+        Explore gene relationships, co-expression patterns,
+        regulatory interactions, and network connectivity
+        within soybean.
+      </p>
+
+    </div>
+
+  </section>
+
+
+  <!-- SEARCH PANEL -->
+
+  <section class="network-search-panel">
+
+    <div class="panel-heading">
+
+      <div>
+        <div class="network-eyebrow">
+          NETWORK EXPLORER
+        </div>
+
+        <h2>Build a Gene Network</h2>
+
+        <p>
+          Enter a soybean gene to explore its network
+          relationships.
+        </p>
+      </div>
+
+    </div>
+
+
+    <div class="network-controls">
+
+      <div class="control-group">
+
+        <label for="geneInput">
+          Soybean Gene ID
+        </label>
+
+        <input
+          id="geneInput"
+          type="text"
+          placeholder="Example: Glyma.09G073600"
+          autocomplete="off"
+        >
+
+      </div>
+
+
+      <div class="control-group">
+
+        <label for="networkType">
+          Network Type
+        </label>
+
+        <select id="networkType">
+
+          <option value="coexpression">
+            Co-expression Network
+          </option>
+
+          <option value="interaction">
+            Gene–Gene Interaction
+          </option>
+
+          <option value="regulatory">
+            Gene Regulatory Network
+          </option>
+
+          <option value="hub">
+            Hub Gene Analysis
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="control-group">
+
+        <label for="correlationThreshold">
+          Correlation Threshold
+        </label>
+
+        <select id="correlationThreshold">
+
+          <option value="0.5">0.50</option>
+          <option value="0.6">0.60</option>
+          <option value="0.7" selected>0.70</option>
+          <option value="0.8">0.80</option>
+          <option value="0.9">0.90</option>
+
+        </select>
+
+      </div>
+
+
+      <div class="control-actions">
+
+        <button
+          id="buildNetwork"
+          class="network-primary-button"
+        >
+          Build Network
+        </button>
+
+        <button
+          id="clearNetwork"
+          class="network-secondary-button"
+        >
+          Clear
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="networkStatus"
+      class="network-status"
+      role="status"
+    ></div>
+
+  </section>
+
+
+  <!-- NETWORK RESULTS -->
+
+  <section
+    id="networkResults"
+    class="network-results"
+    hidden
+  >
+
+
+    <!-- NETWORK SUMMARY -->
+
+    <div class="network-summary-grid">
+
+      <div class="summary-card">
+
+        <span class="summary-label">
+          Query Gene
+        </span>
+
+        <strong id="summaryGene">
+          —
+        </strong>
+
+      </div>
+
+
+      <div class="summary-card">
+
+        <span class="summary-label">
+          Network Type
+        </span>
+
+        <strong id="summaryType">
+          —
+        </strong>
+
+      </div>
+
+
+      <div class="summary-card">
+
+        <span class="summary-label">
+          Nodes
+        </span>
+
+        <strong id="summaryNodes">
+          —
+        </strong>
+
+      </div>
+
+
+      <div class="summary-card">
+
+        <span class="summary-label">
+          Connections
+        </span>
+
+        <strong id="summaryEdges">
+          —
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- NETWORK VISUALIZATION -->
+
+    <section class="network-visual-card">
+
+      <div class="network-card-header">
+
+        <div>
+
+          <div class="network-eyebrow">
+            NETWORK VISUALIZATION
+          </div>
+
+          <h2>
+            Gene Relationship Network
+          </h2>
+
+        </div>
+
+
+        <div class="network-actions">
+
+          <button id="downloadNetwork">
+            Download Network
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div
+        id="networkCanvas"
+        class="network-canvas"
+      >
+
+        <div class="network-placeholder">
+
+          <div class="placeholder-icon">
+            ◎
+          </div>
+
+          <h3>
+            Network visualization
+          </h3>
+
+          <p>
+            Enter a soybean gene and select
+            <strong>Build Network</strong>.
+          </p>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- NETWORK INFORMATION -->
+
+    <section class="network-info-grid">
+
+
+      <div class="network-info-card">
+
+        <div class="network-eyebrow">
+          CONNECTED GENES
+        </div>
+
+        <h2>
+          Network Members
+        </h2>
+
+        <div id="connectedGenes">
+
+          <p class="empty-message">
+            No network generated yet.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="network-info-card">
+
+        <div class="network-eyebrow">
+          NETWORK STATISTICS
+        </div>
+
+        <h2>
+          Connectivity
+        </h2>
+
+        <div
+          id="networkStatistics"
+          class="statistics-list"
+        >
+
+          <div>
+            <span>Degree</span>
+            <strong>—</strong>
+          </div>
+
+          <div>
+            <span>Average correlation</span>
+            <strong>—</strong>
+          </div>
+
+          <div>
+            <span>Network density</span>
+            <strong>—</strong>
+          </div>
+
+          <div>
+            <span>Hub candidates</span>
+            <strong>—</strong>
+          </div>
+
+        </div>
+
+      </div>
+
+
+    </section>
+
+
+    <!-- EVIDENCE -->
+
+    <section class="network-evidence-card">
+
+      <div class="network-eyebrow">
+        EVIDENCE LAYERS
+      </div>
+
+      <h2>
+        Integrated Network Evidence
+      </h2>
+
+      <div class="evidence-grid">
+
+        <div class="evidence-item">
+
+          <strong>
+            Expression
+          </strong>
+
+          <span>
+            RNA-seq co-expression
+          </span>
+
+        </div>
+
+
+        <div class="evidence-item">
+
+          <strong>
+            Interaction
+          </strong>
+
+          <span>
+            Gene–gene relationships
+          </span>
+
+        </div>
+
+
+        <div class="evidence-item">
+
+          <strong>
+            Regulation
+          </strong>
+
+          <span>
+            Transcription factor relationships
+          </span>
+
+        </div>
+
+
+        <div class="evidence-item">
+
+          <strong>
+            Connectivity
+          </strong>
+
+          <span>
+            Network centrality and hub analysis
+          </span>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+  </section>
+
+
+  <!-- =========================================================
+       MULTIPLE GENE NETWORK ANALYSIS
+       Completely separate from Single Gene Network
+       ========================================================= -->
+
+  <section id="multipleGeneSection" class="multiple-gene-section">
+
+    <div class="network-search-panel multiple-gene-panel">
+
+      <div class="network-eyebrow">
+        MULTIPLE GENE ANALYSIS
+      </div>
+
+      <h2>Multiple Gene Network</h2>
+
+      <p class="network-description">
+        Enter multiple soybean genes to examine their network
+        relationships together.
+      </p>
+
+      <div class="multiple-gene-input-area">
+
+        <label for="multipleGeneInput">
+          Candidate Genes
+        </label>
+
+        <textarea
+          id="multipleGeneInput"
+          class="multiple-gene-textarea"
+          rows="6"
+          placeholder="Enter one soybean gene per line&#10;&#10;Example:&#10;Glyma.09G073600&#10;Glyma.09G073700&#10;Glyma.09G073800"
+        ></textarea>
+
+        <div id="multipleGeneCount" class="multiple-gene-count">
+          0 genes entered
+        </div>
+
+      </div>
+
+      <div class="multiple-gene-controls">
+
+        <div class="network-control-group">
+
+          <label for="multipleNetworkType">
+            Network Type
+          </label>
+
+          <select id="multipleNetworkType">
+
+            <option value="coexpression">
+              Co-expression Network
+            </option>
+
+            <option value="interaction">
+              Gene–Gene Interaction
+            </option>
+
+            <option value="regulation">
+              Gene Regulatory Network
+            </option>
+
+          </select>
+
+        </div>
+
+        <div class="network-control-group">
+
+          <label for="multipleCorrelationThreshold">
+            Correlation Threshold
+          </label>
+
+          <select id="multipleCorrelationThreshold">
+
+            <option value="0.70">0.70</option>
+            <option value="0.75">0.75</option>
+            <option value="0.80" selected>0.80</option>
+            <option value="0.85">0.85</option>
+            <option value="0.90">0.90</option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+      <div class="multiple-gene-actions">
+
+        <button
+          id="buildMultipleGeneNetwork"
+          class="network-primary-button"
+          type="button"
+        >
+          Build Multiple Gene Network
+        </button>
+
+        <button
+          id="clearMultipleGeneNetwork"
+          class="network-secondary-button"
+          type="button"
+        >
+          Clear
+        </button>
+
+      </div>
+
+      <div
+        id="multipleGeneStatus"
+        class="network-status"
+        aria-live="polite"
+      ></div>
+
+    </div>
+
+
+    <!-- Fresh isolated KEGG analysis -->
+
+    <div
+      id="multipleGeneKEGGFresh"
+      hidden
+    ></div>
+    <div
+      id="freshKeggDownloadActions"
+      class="fresh-kegg-actions"
+      hidden
+    >
+      <button
+        type="button"
+        id="freshKeggDownloadPNG"
+        class="fresh-kegg-download-btn"
+      >
+        Download Plot PNG
+      </button>
+
+      <button
+        type="button"
+        id="freshKeggDownloadCSV"
+        class="fresh-kegg-download-btn"
+      >
+        Download Results CSV
+      </button>
+    </div>
+
+
+
+    <section id="multipleGeneResults" class="multiple-gene-results" hidden>
+
+      <div class="multiple-gene-summary">
+
+        <div class="network-summary-card">
+
+          <span class="network-eyebrow">
+            CANDIDATE GENES
+          </span>
+
+          <strong id="multipleGeneResultCount">
+            0
+          </strong>
+
+        </div>
+
+        <div class="network-summary-card">
+
+          <span class="network-eyebrow">
+            RELATIONSHIPS
+          </span>
+
+          <strong id="multipleGeneRelationshipCount">
+            0
+          </strong>
+
+        </div>
+
+        <div class="network-summary-card">
+
+          <span class="network-eyebrow">
+            NETWORK DENSITY
+          </span>
+
+          <strong id="multipleGeneDensity">
+            —
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <section class="network-visual-card multiple-gene-visual-card">
+
+        <div class="network-card-header">
+
+          <div>
+
+            <div class="network-eyebrow">
+              MULTIPLE GENE NETWORK
+            </div>
+
+            <h3>
+              Candidate Gene Relationships
+            </h3>
+
+          </div>
+
+          <div class="network-actions">
+
+            <button
+              id="fitMultipleGeneNetwork"
+              type="button"
+            >
+              Fit Network
+            </button>
+
+            <button
+              id="resetMultipleGeneNetwork"
+              type="button"
+            >
+              Reset Layout
+            </button>
+
+          </div>
+
+        </div>
+
+        <div
+          id="multipleGeneCanvas"
+          class="network-canvas multiple-gene-canvas"
+        >
+
+          <div class="network-placeholder">
+
+            <strong>
+              Multiple gene network
+            </strong>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <section class="multiple-gene-connectivity-card">
+
+        <div class="network-eyebrow">
+          CONNECTIVITY
+        </div>
+
+        <h3>
+          Candidate Gene Connectivity
+        </h3>
+
+        <p>
+          Connectivity describes how many displayed relationships
+          each candidate has within the current network.
+        </p>
+
+        <div class="multiple-gene-table-wrapper">
+
+          <table class="multiple-gene-table">
+
+            <thead>
+              <tr>
+                <th>Gene</th>
+                <th>Connections</th>
+                <th>Connectivity</th>
+              </tr>
+            </thead>
+
+            <tbody id="multipleGeneConnectivityBody"></tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- Candidate Network Fingerprint -->
+
+      <section class="multiple-gene-analysis-card">
+
+        <div class="network-eyebrow">
+          CANDIDATE NETWORK FINGERPRINT
+        </div>
+
+        <h3>
+          Candidate Network Architecture
+        </h3>
+
+        <p>
+          This summarizes how the submitted candidate genes
+          are organized within the displayed network.
+        </p>
+
+        <div
+          id="multipleGeneFingerprint"
+          class="multiple-gene-fingerprint"
+        ></div>
+
+      </section>
+
+
+      <!-- Modules / Shared Neighbors / Bridges -->
+
+      <div class="multiple-gene-analysis-grid">
+
+        <section class="multiple-gene-analysis-card">
+
+          <div class="network-eyebrow">
+            CANDIDATE MODULES
+          </div>
+
+          <h3>
+            Network Modules
+          </h3>
+
+          <p>
+            Groups of candidate genes that are connected
+            within the current network.
+          </p>
+
+          <div id="multipleGeneModules"></div>
+
+        </section>
+
+
+        <section class="multiple-gene-analysis-card">
+
+          <div class="network-eyebrow">
+            SHARED NETWORK NEIGHBORHOOD
+          </div>
+
+          <h3>
+            Shared Network Genes
+          </h3>
+
+          <p>
+            Genes connected to multiple members of the
+            submitted candidate set.
+          </p>
+
+          <div id="multipleGeneSharedNeighbors"></div>
+
+        </section>
+
+
+        <section class="multiple-gene-analysis-card">
+
+          <div class="network-eyebrow">
+            BRIDGE ANALYSIS
+          </div>
+
+          <h3>
+            Bridge Candidates
+          </h3>
+
+          <p>
+            Candidate genes that connect different parts
+            of the candidate network.
+          </p>
+
+          <div id="multipleGeneBridges"></div>
+
+        </section>
+
+
+        <section class="multiple-gene-analysis-card">
+
+          <div class="network-eyebrow">
+            CANDIDATE ARCHITECTURE
+          </div>
+
+          <h3>
+            Network Structure
+          </h3>
+
+          <p>
+            Use the network to examine candidate modules,
+            shared neighbors, and connections between
+            candidate groups.
+          </p>
+
+          <div
+            id="multipleGeneArchitectureText"
+          >
+            Build the network to calculate candidate architecture.
+          </div>
+
+        </section>
+
+      </div>
+
+
+      <section class="multiple-gene-interpretation-card">
+
+        <div class="network-eyebrow">
+          NETWORK INTERPRETATION
+        </div>
+
+        <h3>
+          How to Read This Network
+        </h3>
+
+        <div
+          id="multipleGeneInterpretation"
+          class="multiple-gene-interpretation"
+        >
+          Build a multiple gene network to see
+          the network structure and connectivity.
+        </div>
+
+      </section>
+
+
+      <section class="multiple-gene-evidence-card">
+
+        <div class="network-eyebrow">
+          SCIENTIFIC CONTEXT
+        </div>
+
+        <h3>
+          Interpretation of Network Relationships
+        </h3>
+
+        <p>
+          Network connectivity describes the relationships displayed
+          by the selected network model. A connection by itself does
+          not establish a physical interaction, regulatory relationship,
+          causal relationship, or biological function.
+        </p>
+
+        <p>
+          Biological interpretation should be based on the underlying
+          expression, interaction, regulatory, or other validated
+          evidence used to construct the network.
+        </p>
+
+      </section>
+
+    </section>
+
+  </section>
+
+
+</main>
+
+
+<script src="https://unpkg.com/cytoscape@3.31.2/dist/cytoscape.min.js"></script>
+<script src="js/network-analysis.js"></script>
+<script src="js/multiple-gene-network.js"></script>
+<!-- OLD GWAS UPGRADE DISABLED: replaced by isolated modules -->
+<!-- <script src="js/multiple-gene-gwas-upgrade.js"></script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="js/multiple-gene-kegg.js"></script>
+
+</body>
+</html>
